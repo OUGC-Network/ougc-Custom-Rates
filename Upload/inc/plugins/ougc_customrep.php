@@ -2314,10 +2314,7 @@ class OUGC_CustomRep
 	// Set url
 	function set_url($url)
 	{
-		if(($url = trim($url)))
-		{
-			$this->url = $url;
-		}
+        $this->url = \ougc\CustomReputation\Core\urlHandlerSet($url);
 	}
 
 	// Check PL requirements
@@ -2379,27 +2376,7 @@ class OUGC_CustomRep
 	// Build an url parameter
 	function build_url($urlappend=array(), $fetch_input_url=false)
 	{
-		global $PL;
-
-		if(!is_object($PL))
-		{
-			return $this->url;
-		}
-
-		if($fetch_input_url === false)
-		{
-			if($urlappend && !is_array($urlappend))
-			{
-				$urlappend = explode('=', $urlappend);
-				$urlappend = array($urlappend[0] => $urlappend[1]);
-			}
-		}
-		else
-		{
-			$urlappend = $this->fetch_input_url($fetch_input_url);
-		}
-
-		return $PL->url_append($this->url, $urlappend, '&amp;', true);
+        return \ougc\CustomReputation\Core\urlHandlerBuild($urlappend, $fetch_input_url);
 	}
 
 	// Fetch current url inputs, for multipage mostly

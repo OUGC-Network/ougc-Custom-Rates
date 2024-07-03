@@ -47,7 +47,7 @@ $sub_tabs['ougc_customrep_view'] = array(
 );
 $sub_tabs['ougc_customrep_add'] = array(
 	'title'			=> $lang->ougc_customrep_tab_add,
-	'link'			=> $customrep->build_url('action=add'),
+	'link'			=> $customrep->build_url(['action' => 'add']),
 	'description'	=> $lang->ougc_customrep_tab_add_d
 );
 if($mybb->get_input('action') == 'edit')
@@ -170,7 +170,7 @@ if($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
 	if($add)
 	{
-		$form = new Form($customrep->build_url('action=add'), 'post');
+		$form = new Form($customrep->build_url(['action' => 'add']), 'post');
 		$form_container = new FormContainer($sub_tabs['ougc_customrep_add']['title']);
 	}
 	else
@@ -326,7 +326,7 @@ else
 			$customrep->admin_redirect();
 		}
 
-		$form = new Form($customrep->build_url('action=updatedisporder'), 'post');
+		$form = new Form($customrep->build_url(['action' => 'updatedisporder']), 'post');
 
 		while($reputation = $db->fetch_array($query))
 		{
@@ -359,7 +359,7 @@ else
 		$customrep->set_url('index.php');
 
 		// Multipage
-		if(($multipage = trim(draw_admin_pagination($mybb->get_input('page', 1), $perpage, $repcount, $customrep->build_url(false, 'page')))))
+		if(($multipage = trim(draw_admin_pagination($mybb->get_input('page', 1), $perpage, $repcount, $customrep->build_url()))))
 		{
 			echo $multipage;
 		}
@@ -378,7 +378,7 @@ else
 			}
 			else
 			{
-				$limitstring .= '<a href="'.$customrep->build_url(false, array('perpage', 'page')).'&perpage='.$p.'">'.$p.'</a>'.$s;
+				$limitstring .= '<a href="'.$customrep->build_url(['perpage' => $p]).'">'.$p.'</a>'.$s;
 			}
 		}
 		$limitstring .= '</div>';
