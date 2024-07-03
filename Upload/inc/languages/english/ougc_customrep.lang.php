@@ -45,8 +45,8 @@ $l['ougc_customrep_error_invalidrep'] = 'Invalid rating type.';
 $l['ougc_customrep_error_invalidrating'] = 'You are trying to delete a rating that doesn\'t exists.';
 $l['ougc_customrep_error_multiple'] = 'You have already rated using this rate.';
 $l['ougc_customrep_error_multiple_single'] = 'You have already rated using a unique rate.';
-$l['ougc_customrep_error_points'] = 'You don\'t have enought points to use this rating. You need {1} in order to rate this post.';
-$l['ougc_customrep_error_points_author'] = '{1} doesn\'t have enought points for you to undo this rating. {1} needs {2} in order for you to undo this post.';
+$l['ougc_customrep_error_points'] = 'You don\'t have enough points to use this rating. You need {1} in order to rate this post.';
+$l['ougc_customrep_error_points_author'] = '{1} doesn\'t have enough points for you to undo this rating. {1} needs {2} in order for you to undo this post.';
 
 // Misc page
 $l['ougc_customrep_viewall'] = 'View who rated this.';
@@ -74,7 +74,7 @@ $l['ougc_customrep_profile_stats_given'] = 'Given ratings.';
 
 $l['ougc_customrep_postbit_ignoredbit'] = 'The contents of this message are hidden because of its ratings.';
 
-$l['ougc_customrep_xthreads_error'] = 'Please configure the xThreads feature propertly for it to work.';
+$l['ougc_customrep_xthreads_error'] = 'Please configure the xThreads feature properly for it to work.';
 $l['ougc_customrep_xthreads_error_user'] ='You need to rate this thread with the "{1}" rate in order to view hidden content.';
 $l['ougc_customrep_xthreads_error_user_any'] ='You need to rate this thread in order to view hidden content.';
 $l['ougc_customrep_xthreads_error_author'] ='You\'re requesting your post to be rated to display additional content. Please add content in the text area or disable this request in your thread.';
