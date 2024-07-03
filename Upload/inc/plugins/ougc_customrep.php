@@ -27,29 +27,48 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ****************************************************************************/
 
+declare(strict_types=1);
+
+use function ougc\CustomReputation\Core\addHooks;
+
 // Die if IN_MYBB is not defined, for security reasons.
 defined('IN_MYBB') or die('This file cannot be accessed directly.');
+
+// You can uncomment the lines below to avoid storing some settings in the DB
+define('ougc\CustomReputation\Core\SETTINGS', [
+    //'key' => 'value',
+]);
+
+define('ougc\CustomReputation\Core\DEBUG', false);
+
+define('ougc\CustomReputation\ROOT', constant('MYBB_ROOT') . 'inc/plugins/ougc/CustomReputation');
+
+require_once \ougc\CustomReputation\ROOT . '/core.php';
+
+if (defined('IN_ADMINCP')) {
+    //require_once \ougc\CustomReputation\ROOT . '/admin.php';
+    require_once \ougc\CustomReputation\ROOT . '/hooks/admin.php';
+
+    addHooks('ougc\CustomReputation\Hooks\Admin');
+} else {
+    require_once \ougc\CustomReputation\ROOT . '/hooks/forum.php';
+
+    addHooks('ougc\CustomReputation\Hooks\Forum');
+}
+
+global $plugins;
 
 // Add our hooks
 if(defined('IN_ADMINCP'))
 {
-	// Add menu to ACP
-	$plugins->add_hook('admin_config_menu', create_function('&$args', 'global $lang, $customrep;	if($customrep->active) {$customrep->lang_load();	$args[] = array(\'id\' => \'ougc_customrep\', \'title\' => $lang->ougc_customrep, \'link\' => \'index.php?module=config-ougc_customrep\');}'));
-
-	// Add our action handler to config module
-	$plugins->add_hook('admin_config_action_handler', create_function('&$args', '$args[\'ougc_customrep\'] = array(\'active\' => \'ougc_customrep\', \'file\' => \'ougc_customrep.php\');'));
-
-	// Insert our plugin into the admin permissions page
-	$plugins->add_hook('admin_config_permissions', create_function('&$args', 'global $lang, $customrep;	$customrep->lang_load();	$args[\'ougc_customrep\'] = $lang->ougc_customrep_perm;'));
-
 	// Users merge
 	$plugins->add_hook('admin_user_users_merge_commit', 'ougc_customrep_users_merge');
 
 	// xThreads setting
 	$plugins->add_hook('admin_formcontainer_output_row', 'ougc_customrep_admin_formcontainer_output_row');
-	$plugins->add_hook('admin_config_settings_change', 'ougc_customrep_admin_config_settings_change');
 
 	// Cache manager
+    /*
 	$funct = create_function('', '
 			control_object($GLOBALS[\'cache\'], \'
 			function update_ougc_customrep()
@@ -60,23 +79,10 @@ if(defined('IN_ADMINCP'))
 	');
 	$plugins->add_hook('admin_tools_cache_start', $funct);
 	$plugins->add_hook('admin_tools_cache_rebuild', $funct);
-	unset($funct);
+    */
 }
 else
 {
-	global $templatelist;
-
-	if(isset($templatelist))
-	{
-		$templatelist .= ',';
-	}
-	else
-	{
-		$templatelist = '';
-	}
-
-	$plugins->add_hook('global_start', 'ougc_customrep_global_start');
-
 	if(defined('THIS_SCRIPT'))
 	{
 		switch(THIS_SCRIPT)
@@ -109,8 +115,6 @@ else
 				$plugins->add_hook('class_moderation_merge_posts', 'ougc_customrep_merge_posts');
 				#$plugins->add_hook('class_moderation_merge_threads', 'ougc_customrep_merge_threads'); // seems like posts are updated instead of "re-created", good, less work
 				#$plugins->add_hook('class_moderation_split_posts', 'ougc_customrep_merge_threads'); // no sure what happens here
-
-				$templatelist .= 'ougccustomrep_headerinclude, ougccustomrep_headerinclude_fa, ougccustomrep_rep_number, ougccustomrep_rep_img, ougccustomrep_rep_img_fa, ougccustomrep_rep, ougccustomrep_rep_fa, ougccustomrep, ougccustomrep_rep_voted, ougccustomrep_xthreads_js, ougccustomrep_headerinclude_xthreads_editpost, ougccustomrep_headerinclude_xthreads';
 				break;
 		}
 	}
@@ -514,6 +518,8 @@ if(typeof fields !== \'undefined\')
 
 		if(!$alertTypeManager)
 		{
+            global $db, $cache;
+
 			$alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::createInstance($db, $cache);
 		}
 
@@ -654,6 +660,8 @@ function ougc_customrep_uninstall()
 
 		if(!$alertTypeManager)
 		{
+            global $cache;
+
 			$alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::createInstance($db, $cache);
 		}
 
@@ -692,6 +700,8 @@ function ougc_customrep_users_merge()
 	$query = $db->simple_select('ougc_customrep_log', 'lid', 'uid=\''.$fromuid.'\'');
 	while($lid = $db->fetch_field($query, 'lid'))
 	{
+        global $customrep;
+
 		$customrep->update_log($lid, array('uid' => $touid));
 	}
 }
@@ -733,19 +743,6 @@ function ougc_customrep_admin_formcontainer_output_row(&$args)
 	}
 	
 	$args['content'] = $form->generate_select_box('upsetting[ougc_customrep_xthreads_hide][]', $option_list, $selected_list, array('id' => 'row_setting_ougc_customrep_xthreads_hide', 'size' => 5, 'multiple' => true));
-}
-
-// Propertly save the settings
-function ougc_customrep_admin_config_settings_change()
-{
-	global $mybb;
-
-	if($mybb->request_method != 'post' || !isset($mybb->input['upsetting']['ougc_customrep_firstpost']))
-	{
-		return;
-	}
-
-	$mybb->input['upsetting']['ougc_customrep_xthreads_hide'] = implode(',', (array)$mybb->input['upsetting']['ougc_customrep_xthreads_hide']);
 }
 
 // Delete logs from users which are being deleted
@@ -859,7 +856,7 @@ function ougc_customrep_attachment_start()
 	$required_rates = array();
 	foreach($reps as $rid => $reputation)
 	{
-		if($reputation['requireattach'] && is_member($reputation['groups']) && is_member($reputation['forums'], array('usergroup' => $thread['fid'])))
+		if($reputation['requireattach'] && is_member($reputation['groups']) && is_member($reputation['forums'], array('usergroup' => $thread['fid'], 'additionalgroups' => '')))
 		{
 			if($reputation['firstpost'] && !$is_first_post)
 			{
@@ -890,31 +887,6 @@ function ougc_customrep_attachment_start()
 	error($lang->ougc_customrep_error_nopermission_attachment);
 }
 
-// MyAlerts support
-function ougc_customrep_global_start()
-{
-	global $customrep, $mybb, $lang;
-
-	if($customrep->myalerts_installed)
-	{
-		$formatterManager = MybbStuff_MyAlerts_AlertFormatterManager::getInstance();
-
-		if(!$formatterManager)
-		{
-			$formatterManager = MybbStuff_MyAlerts_AlertFormatterManager::createInstance($mybb, $lang);
-		}
-
-		$formatterManager->registerFormatter(
-			new OUGC_CustomRep_AlertFormmatter($mybb, $lang, 'ougc_customrep')
-		);
-
-		if(THIS_SCRIPT == 'alerts.php')
-		{
-			$customrep->lang_load();
-		}
-	}
-}
-
 // Display ratings on forum display
 function ougc_customrep_forumdisplay_thread()
 {
@@ -922,7 +894,7 @@ function ougc_customrep_forumdisplay_thread()
 
 	$plugins->remove_hook('forumdisplay_thread', 'ougc_customrep_forumdisplay_thread');
 
-	if(!$mybb->settings['ougc_customrep_threadlist'] || !is_member($mybb->settings['ougc_customrep_threadlist'], array('usergroup' => $fid)))
+	if(!$mybb->settings['ougc_customrep_threadlist'] || !is_member($mybb->settings['ougc_customrep_threadlist'], array('usergroup' => $fid, 'additionalgroups' => '')))
 	{
 		return;
 	}
@@ -994,7 +966,7 @@ function ougc_customrep_portal_announcement()
 		return;
 	}
 
-	if($mybb->settings['ougc_customrep_portal'] != -1 && !is_member($mybb->settings['ougc_customrep_portal'], array('usergroup' => $announcement['fid'])))
+	if($mybb->settings['ougc_customrep_portal'] != -1 && !is_member($mybb->settings['ougc_customrep_portal'], array('usergroup' => $announcement['fid'], 'additionalgroups' => '')))
 	{
 		return;
 	}
@@ -1224,6 +1196,10 @@ function ougc_customrep_member_profile_end()
 
 	$where['q'] = "l.uid='{$memprofile['uid']}'";
 
+    $stats_given = $stats_given ?? [];
+
+    $stats_received = $stats_received ?? [];
+
 	$query = $db->simple_select('ougc_customrep_log l LEFT JOIN '.TABLE_PREFIX.'posts p ON (p.pid=l.pid) LEFT JOIN '.TABLE_PREFIX.'threads t ON (t.tid=p.tid)', 'l.rid', implode(' AND ', $where));
 	while($rid = $db->fetch_field($query, 'rid'))
 	{
@@ -1342,6 +1318,7 @@ function ougc_customrep_delete_thread(&$tid)
 // Delete logs upon post deletion
 function ougc_customrep_delete_post(&$pid)
 {
+    global $db;
 	global $customrep;
 
 	// get log ids and delete them all, this may take some time
@@ -1471,7 +1448,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid=null)
 
 	foreach($customrep->cache['_reps'] as $rid => $reputation)
 	{
-		if(!is_member($reputation['forums'], array('usergroup' => $customrep->post['fid'])))
+		if(!is_member($reputation['forums'], array('usergroup' => $customrep->post['fid'], 'additionalgroups' => '')))
 		{
 			continue;
 		}
@@ -1572,7 +1549,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid=null)
 		}
 		*/
 
-		eval('$rep = "'.$templates->get('ougccustomrep_rep', 1, 0).'";');
+        $rep = eval($templates->render('ougccustomrep_rep', 1, 0));
 
 		if(!empty($reputation['customvariable']) || $specific_rid !== null && (int)$specific_rid === (int)$rid)
 		{
@@ -1824,7 +1801,7 @@ function ougc_customrep_request()
 				$post_author = get_user($customrep->post['uid']);
 				if($log['points'] > $post_author['newpoints'])
 				{
-					$error($lang->sprintf($lang->ougc_customrep_error_points_author, htmlspecialchars_uni($post_author['username']), newpoints_format_points($points)));
+					$error($lang->sprintf($lang->ougc_customrep_error_points_author, htmlspecialchars_uni($post_author['username']), newpoints_format_points($log['points'])));
 				}
 	
 				newpoints_addpoints($customrep->post['uid'], -$log['points']); // remove from post owner
@@ -2000,6 +1977,8 @@ function ougc_customrep_ajax_error($error)
 
 function ougc_customrep_ajax($data)
 {
+    global $lang;
+
 	header("Content-type: application/json; charset={$lang->settings['charset']}");
 
 	echo json_encode($data);
@@ -2017,7 +1996,7 @@ function ougc_customrep_modal_error($error_message='', $title='')
 		$title = $lang->ougc_customrep_error;
 	}
 
-	eval('$content .= "'.$templates->get('ougccustomrep_misc_error').'";');
+    $content = eval($templates->render('ougccustomrep_misc_error'));
 
 	ougc_customrep_modal($content, $title);
 }
@@ -2027,8 +2006,8 @@ function ougc_customrep_modal($content='', $title='', $desc='', $multipage='')
 	global $customrep, $lang, $templates, $theme;
 	$customrep->lang_load();
 
-	eval('$page = "'.$templates->get('ougccustomrep_misc', 1, 0).'";');
-	eval('$modal = "'.$templates->get('ougccustomrep_modal', 1, 0).'";');
+    $page = eval($templates->render('ougccustomrep_misc', 1, 0));
+    $modal = eval($templates->render('ougccustomrep_modal', 1, 0));
 
 	echo $modal;
 
@@ -2054,7 +2033,7 @@ function ougc_customrep_xthreads_hide($value='', $field=true)
 		{
 			foreach($reps as $rid => $rep)
 			{
-				if(!is_member($rep['forums'], ['usergroup' => $fid]))
+				if(!is_member($rep['forums'], ['usergroup' => $fid, 'additionalgroups' => '']))
 				{
 					unset($reps[$rid]);
 				}
@@ -2329,12 +2308,7 @@ class OUGC_CustomRep
 	// Load our language file if neccessary
 	function lang_load()
 	{
-		global $lang;
-
-		if(!isset($lang->ougc_customrep))
-		{
-			$lang->load(defined('IN_ADMINCP') ? 'config_ougc_customrep' : 'ougc_customrep');
-		}
+        \ougc\CustomReputation\Core\loadLanguage();
 	}
 
 	// Set url
@@ -2723,15 +2697,15 @@ class OUGC_CustomRep
 		$valid = true;
 
 		$this->validate_errors = array();
-		$name = trim($this->rep_data['name']);
-		if(!$name || $name > 100)
+		$name = strlen(trim($this->rep_data['name']));
+		if($name < 1 || $name > 100)
 		{
 			$this->validate_errors[] = $lang->ougc_customrep_error_invalidname;
 			$valid = false;
 		}
 
-		$name = trim($this->rep_data['image']);
-		if($name && $name > 255)
+		$image = strlen(trim($this->rep_data['image']));
+		if($image < 1 || $image > 255)
 		{
 			$this->validate_errors[] = $lang->ougc_customrep_error_invalidimage;
 			$valid = false;
@@ -2743,7 +2717,7 @@ class OUGC_CustomRep
 			$valid = false;
 		}
 
-		if($this->rep_data['reptype'] !== '' && !is_numeric($this->rep_data['reptype']) || $this->rep_data['reptype']{3})
+		if($this->rep_data['reptype'] !== '' && !is_numeric($this->rep_data['reptype'])/* || $this->rep_data['reptype']{3}*/)
 		{
 			$this->validate_errors[] = $lang->ougc_customrep_error_invalidreptype;
 			$valid = false;
@@ -2905,6 +2879,7 @@ class OUGC_CustomRep
 	// Delete a reputation log. This may take up some time.
 	function delete_log($lid)
 	{
+        global $mybb;
 		global $db, $plugins;
 
 		$args = array(
