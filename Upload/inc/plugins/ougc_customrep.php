@@ -69,20 +69,6 @@ if (defined('IN_ADMINCP')) {
 
     // xThreads setting
     $plugins->add_hook('admin_formcontainer_output_row', 'ougc_customrep_admin_formcontainer_output_row');
-
-    // Cache manager
-    /*
-	$funct = create_function('', '
-			control_object($GLOBALS[\'cache\'], \'
-			function update_ougc_customrep()
-			{
-				$GLOBALS[\\\'customrep\\\']->update_cache();
-			}
-		\');
-	');
-	$plugins->add_hook('admin_tools_cache_start', $funct);
-	$plugins->add_hook('admin_tools_cache_rebuild', $funct);
-    */
 } else {
     if (defined('THIS_SCRIPT')) {
         switch (THIS_SCRIPT) {
@@ -653,6 +639,7 @@ function ougc_customrep_install()
         'points' => 0,
         'ignorepoints' => 0,
         'inmultiple' => 0,
+        'createCoreReputationType' => 0,
     ));
 }
 
@@ -725,6 +712,14 @@ function ougc_customrep_uninstall()
     } else {
         $PL->cache_delete('ougc_plugins');
     }
+}
+
+// _is_installed function
+function reload_ougc_customrep(): bool
+{
+    global $customrep;
+
+    return $customrep->update_cache();
 }
 
 //Merging two accounts, update data propertly
@@ -2176,6 +2171,7 @@ class OUGC_CustomRep
                 'points' => "DECIMAL(16,2) NOT NULL default '0'",
                 'ignorepoints' => "smallint(5) NOT NULL DEFAULT '0'",
                 'inmultiple' => "smallint(5) NOT NULL DEFAULT '0'",
+                'createCoreReputationType' => "smallint(5) NOT NULL DEFAULT '0'",
                 'prymary_key' => 'rid'
             ),
             'ougc_customrep_log' => array(
@@ -2184,6 +2180,7 @@ class OUGC_CustomRep
                 'uid' => "int NOT NULL DEFAULT '0'",
                 'rid' => "int NOT NULL DEFAULT '0'",
                 'points' => "DECIMAL(16,2) NOT NULL default '0'",
+                'coreReputationID' => "int NOT NULL DEFAULT '0'",
                 'dateline' => "int(10) NOT NULL DEFAULT '0'",
                 'prymary_key' => 'lid'
             )
@@ -2197,7 +2194,8 @@ class OUGC_CustomRep
     {
         $tables = array(
             'reputation' => array(
-                'lid' => "int NOT NULL DEFAULT '0'"
+                'lid' => "int NOT NULL DEFAULT '0'",
+                'ougcCustomReputationCreatedOnLogID' => "int NOT NULL DEFAULT '0'"
             ),
         );
 
@@ -2413,19 +2411,36 @@ class OUGC_CustomRep
     {
         global $db, $cache;
 
-        $d = array();
-        $query = $db->simple_select('ougc_customrep', '*', 'visible=\'1\'', array('order_by' => 'disporder'));
-        while ($rep = $db->fetch_array($query)) {
-            $rid = $rep['rid'];
-            unset($rep['rid'], $rep['disporder'], $rep['visible']);
-            $d[$rid] = $rep;
+        $cacheData = [];
+
+        $dbQuery = $db->simple_select(
+            'ougc_customrep',
+            'rid, name, image, groups, forums, firstpost, allowdeletion, customvariable, requireattach, reptype, points, ignorepoints, inmultiple, createCoreReputationType',
+            "visible='1'",
+            ['order_by' => 'disporder']
+        );
+
+        while ($customReputationData = $db->fetch_array($dbQuery)) {
+            $cacheData[(int)$customReputationData['rid']] = [
+                'name' => $customReputationData['name'],
+                'image' => $customReputationData['image'],
+                'groups' => $customReputationData['groups'],
+                'forums' => $customReputationData['forums'],
+                'firstpost' => (int)$customReputationData['firstpost'],
+                'allowdeletion' => (int)$customReputationData['allowdeletion'],
+                'customvariable' => (int)$customReputationData['customvariable'],
+                'requireattach' => (int)$customReputationData['requireattach'],
+                'reptype' => (int)$customReputationData['reptype'],
+                'points' => (float)$customReputationData['points'],
+                'ignorepoints' => (int)$customReputationData['ignorepoints'],
+                'inmultiple' => (int)$customReputationData['inmultiple'],
+                'createCoreReputationType' => (int)$customReputationData['createCoreReputationType'],
+            ];
         }
 
-        if ($d) {
-            $cache->update('ougc_customrep', $d);
-        }
+        $cache->update('ougc_customrep', $cacheData);
 
-        return (bool)$d;
+        return true;
     }
 
     // Clean a string/array and return it
@@ -2511,6 +2526,10 @@ class OUGC_CustomRep
             $insert_data['inmultiple'] = (int)$data['inmultiple'];
         }
 
+        if (isset($data['createCoreReputationType'])) {
+            $insert_data['createCoreReputationType'] = (int)$data['createCoreReputationType'];
+        }
+
         $insert_data['reptype'] = '';
         if ($data['reptype'] != '') {
             $insert_data['reptype'] = (int)$data['reptype'];
@@ -2556,6 +2575,7 @@ class OUGC_CustomRep
                 'points' => $reputation['points'],
                 'ignorepoints' => $reputation['ignorepoints'],
                 'inmultiple' => $reputation['inmultiple'],
+                'createCoreReputationType' => $reputation['createCoreReputationType'],
                 'reptype' => $reputation['reptype'],
             );
         } else {
@@ -2578,6 +2598,7 @@ class OUGC_CustomRep
                 'points' => 0,
                 'ignorepoints' => 0,
                 'inmultiple' => 0,
+                'createCoreReputationType' => 0,
                 'reptype' => '',
             );
         }
@@ -2710,11 +2731,9 @@ class OUGC_CustomRep
     }
 
     // Set post data
-    public function set_post($post = array())
+    public function set_post(array $post = array())
     {
-        if (is_array($post)) {
-            $this->post = $post;
-        }
+        $this->post = $post;
     }
 
     // We want multi-lang support (this doesn't work for ACP, to avoud confussions)
@@ -2816,7 +2835,7 @@ class OUGC_CustomRep
     }
 
     // Insert a log into the DB
-    public function insert_log($rid, $reptype = '', $points = 0) // default = disabled
+    public function insert_log($rid, $reptype = '', $points = 0, int $coreReputationID = 0) // default = disabled
     {
         if (!isset($rid) || !isset($this->post['pid'])) {
             die('Invalid log insertion attempt.');
@@ -2830,6 +2849,7 @@ class OUGC_CustomRep
             'rid' => (int)$rid,
             'points' => (float)$points,
             'dateline' => TIME_NOW,
+            'coreReputationID' => $coreReputationID,
         ));
 
         $args = array(
@@ -2848,7 +2868,7 @@ class OUGC_CustomRep
         if ($reptype !== 0) {
             global $Alerts;
 
-            $rip = $db->insert_query('reputation', array(
+            $rip = (int)$db->insert_query('reputation', array(
                 'pid' => (int)$this->post['pid'],
                 'uid' => (int)$this->post['uid'],
                 'adduid' => (int)$mybb->user['uid'],

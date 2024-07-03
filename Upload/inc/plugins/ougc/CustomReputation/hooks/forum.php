@@ -30,10 +30,16 @@ declare(strict_types=1);
 
 namespace ougc\CustomReputation\Hooks\Forum;
 
+use MyBB;
 use MybbStuff_MyAlerts_AlertFormatterManager;
 use OUGC_CustomRep_AlertFormmatter;
 
 use function ougc\CustomReputation\Core\loadLanguage;
+
+use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
+use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
+use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
+use const ougc\CustomReputation\Core\LINK_REPUTATION_TYPE_NONE;
 
 function global_start(): bool
 {
@@ -81,3 +87,162 @@ function global_start(): bool
 
     return true;
 }
+
+function reputation_do_add_process(): bool
+{
+    global $reputation, $existing_reputation;
+
+    if (empty($reputation['pid'])) {
+        return false;
+    }
+
+    $postID = (int)$reputation['pid'];
+
+    $postData = get_post($postID);
+
+    if (empty($postData['pid'])) {
+        return false;
+    }
+
+    global $mybb, $db;
+    global $customrep;
+
+    $customrep->set_post($postData);
+
+    $userID = (int)$mybb->user['uid'];
+
+    $threadData = get_thread($postData['tid']);
+
+    global $customReputationObjects, $existingCustomReputationLogs;
+
+    $customReputationObjects = [];
+
+    foreach ($mybb->cache->read('ougc_customrep') as $customReputationID => $customReputationData) {
+        if (empty($customReputationData['createCoreReputationType']) || !is_member(
+                $customReputationData['groups']
+            ) || !is_member(
+                $customReputationData['forums'],
+                ['usergroup' => $postData['fid'], 'additionalgroups' => '']
+            ) || (!empty($customReputationData['firstpost']) && $postID !== (int)$threadData['firstpost'])/* || (!empty($customReputationData['points']) && (float)$mybb->user['newpoints'] < (float)$customReputationData['points'])*/) {
+            continue;
+            // todo, currently ignores the newpoints setting
+        }
+
+        $customReputationObjects[$customReputationID] = [
+            //'allowdeletion' => $customReputationData['allowdeletion'],
+            'inmultiple' => $customReputationData['inmultiple'],
+            'createCoreReputationType' => $customReputationData['createCoreReputationType'],
+        ];
+    }
+
+    $customReputationIDs = implode("','", array_keys($customReputationObjects));
+
+    $dbQuery = $db->simple_select(
+        'ougc_customrep_log',
+        'lid, rid, coreReputationID',
+        "pid='{$postID}' AND uid='{$userID}' AND rid IN ('{$customReputationIDs}')"
+    );
+
+    $existingCustomReputationLogs = [];
+
+    while ($logData = $db->fetch_array($dbQuery)) {
+        isset($existingCustomReputationLogs[(int)$logData['rid']]) || $existingCustomReputationLogs[(int)$logData['rid']] = [];
+
+        $existingCustomReputationLogs[(int)$logData['rid']][(int)$logData['lid']] = (int)$logData['coreReputationID'];
+    }
+
+    return true;
+}
+
+function reputation_do_add_end(): bool
+{
+    global $mybb, $db;
+    global $uid;
+    global $customReputationObjects, $existingCustomReputationLogs;
+    global $customrep;
+
+    $isExistingReputation = !empty($existing_reputation['uid']);
+
+    $userID = (int)$mybb->user['uid'];
+
+    $postID = $mybb->get_input('pid', MyBB::INPUT_INT);
+
+    $reputationValue = $mybb->get_input('reputation', MyBB::INPUT_INT);
+
+    $dbQuery = $db->simple_select(
+        'reputation',
+        'rid',
+        "uid='{$uid}' AND adduid='{$userID}' AND pid='{$postID}'"
+    );
+
+    $currentCoreReputationID = (int)$db->fetch_field($dbQuery, 'rid');
+
+    foreach ($customReputationObjects as $customReputationID => $customReputationData) {
+        $executeCustomReputation = false;
+
+        if ((int)$customReputationData['createCoreReputationType'] === CORE_REPUTATION_TYPE_POSITIVE && $reputationValue > 0) {
+            $executeCustomReputation = $reputationValue;
+        } elseif ((int)$customReputationData['createCoreReputationType'] === CORE_REPUTATION_TYPE_NEUTRAL && $reputationValue === 0) {
+            $executeCustomReputation = 0;
+        } elseif ((int)$customReputationData['createCoreReputationType'] === CORE_REPUTATION_TYPE_NEGATIVE && $reputationValue < 0) {
+            $executeCustomReputation = $reputationValue;
+        }
+
+        if (!isset($existingCustomReputationLogs[$customReputationID])) {
+            if ($executeCustomReputation === false) {
+                continue;
+            }
+
+            if (empty($customReputationData['inmultiple'])) {
+                // todo, check if there are existing rates which don't allow in multiple
+                // if so, then this rate should not be inserted
+            }
+
+            $logID = $customrep->insert_log(
+                $customReputationID,
+                LINK_REPUTATION_TYPE_NONE,
+                0,
+                $currentCoreReputationID
+            );
+
+            $db->update_query(
+                'reputation',
+                ['ougcCustomReputationCreatedOnLogID' => $logID],
+                "rid='{$currentCoreReputationID}'"
+            );
+        } else {
+            foreach ($existingCustomReputationLogs[$customReputationID] as $exitingLogID => $coreReputationID) {
+                $existingLogData = $customrep->get_log($exitingLogID);
+
+                if ($executeCustomReputation === false && !empty($existingLogData['lid'])) {
+                    $customrep->delete_log($exitingLogID);
+
+                    $db->update_query(
+                        'reputation',
+                        ['ougcCustomReputationCreatedOnLogID' => 0],
+                        "ougcCustomReputationCreatedOnLogID='{$exitingLogID}'"
+                    );
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+function reputation_delete_end(): bool
+{
+    global $existing_reputation;
+
+    if (empty($existing_reputation['ougcCustomReputationCreatedOnLogID'])) {
+        return false;
+    }
+
+    global $customrep;
+
+    $customrep->delete_log((int)$existing_reputation['ougcCustomReputationCreatedOnLogID']);
+
+    return true;
+}
+
+// todo, maybe allowdeletion should be checked when deleting a reputation to disable ?

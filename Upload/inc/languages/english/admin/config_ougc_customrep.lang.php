@@ -91,6 +91,11 @@ $l['ougc_customrep_h_inmultiple'] = 'Allow in Multiple';
 $l['ougc_customrep_h_inmultiple_d'] = 'If the <code>Multiple Rating Global Switch</code> setting and this setting are both active, rates will be split into two categories:<br />
 Unique category: All rates with this setting off. Only one of these rates can be used per post.<br />
 Multiple category: All rates with this setting on. Any and all rates can be used at the same time per post.';
+$l['ougc_customrep_h_createCoreReputationType'] = 'Create On Core Reputation';
+$l['ougc_customrep_h_createCoreReputationType_d'] = 'You can select to create a custom reputation log when users use the core reputation system on posts.';
+$l['ougc_customrep_h_createCoreReputationTypePositive'] = 'Positive';
+$l['ougc_customrep_h_createCoreReputationTypeNeutral'] = 'Neutral';
+$l['ougc_customrep_h_createCoreReputationTypeNegative'] = 'Negative';
 
 // Validation
 $l['ougc_customrep_error_invalidname'] = 'Invalid name.';

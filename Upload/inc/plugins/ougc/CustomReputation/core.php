@@ -36,6 +36,14 @@ use const ougc\CustomReputation\ROOT;
 
 const URL = 'showthread.php';
 
+const LINK_REPUTATION_TYPE_NONE = 0;
+
+const CORE_REPUTATION_TYPE_POSITIVE = 1;
+
+const CORE_REPUTATION_TYPE_NEUTRAL = 2;
+
+const CORE_REPUTATION_TYPE_NEGATIVE = 3;
+
 function loadLanguage(): bool
 {
     global $lang;

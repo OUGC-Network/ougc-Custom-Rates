@@ -27,6 +27,10 @@
  ****************************************************************************/
 
 // Die if IN_MYBB is not defined, for security reasons.
+use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
+use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
+use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
+
 defined('IN_MYBB') or die('Direct initialization of this file is not allowed.');
 
 // Check requirements
@@ -285,6 +289,16 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $lang->ougc_customrep_h_inmultiple,
         $lang->ougc_customrep_h_inmultiple_d,
         $form->generate_yes_no_radio('inmultiple', $customrep->rep_data['inmultiple'])
+    );
+    $form_container->output_row(
+        $lang->ougc_customrep_h_createCoreReputationType,
+        $lang->ougc_customrep_h_createCoreReputationType_d,
+        $form->generate_select_box('createCoreReputationType', [
+            0 => $lang->none,
+            CORE_REPUTATION_TYPE_POSITIVE => $lang->ougc_customrep_h_createCoreReputationTypePositive,
+            CORE_REPUTATION_TYPE_NEUTRAL => $lang->ougc_customrep_h_createCoreReputationTypeNeutral,
+            CORE_REPUTATION_TYPE_NEGATIVE => $lang->ougc_customrep_h_createCoreReputationTypeNegative,
+        ], $customrep->rep_data['createCoreReputationType'])
     );
 
     $form_container->end();
