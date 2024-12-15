@@ -116,7 +116,7 @@ function ougc_customrep_info()
     global $lang, $customrep;
     $customrep->lang_load();
 
-    return array(
+    return [
         'name' => 'OUGC Custom Reputation',
         'description' => $lang->ougc_customrep_d,
         'website' => 'https://ougc.network',
@@ -128,11 +128,11 @@ function ougc_customrep_info()
         'codename' => 'ougc_customrep',
         'newpoints' => '2.1.1',
         'myalerts' => '2.0.4',
-        'pl' => array(
+        'pl' => [
             'version' => 13,
             'url' => 'https://community.mybb.com/mods.php?action=view&pid=573'
-        )
-    );
+        ]
+    ];
 }
 
 // _activate function
@@ -277,92 +277,92 @@ function ougc_customrep_activate()
     );
 
     // Add our settings
-    $PL->settings('ougc_customrep', $lang->ougc_customrep, $lang->ougc_customrep_d, array(
-        'firstpost' => array(
+    $PL->settings('ougc_customrep', $lang->ougc_customrep, $lang->ougc_customrep_d, [
+        'firstpost' => [
             'title' => $lang->setting_ougc_customrep_firstpost,
             'description' => $lang->setting_ougc_customrep_firstpost_desc,
             'optionscode' => 'yesno',
             'value' => 1,
-        ),
-        'delete' => array(
+        ],
+        'delete' => [
             'title' => $lang->setting_ougc_customrep_delete,
             'description' => $lang->setting_ougc_customrep_delete_desc,
             'optionscode' => 'yesno',
             'value' => 1,
-        ),
-        'perpage' => array(
+        ],
+        'perpage' => [
             'title' => $lang->setting_ougc_customrep_perpage,
             'description' => $lang->setting_ougc_customrep_perpage_desc,
             'optionscode' => 'text',
             'value' => 10,
-        ),
-        'fontawesome' => array(
+        ],
+        'fontawesome' => [
             'title' => $lang->setting_ougc_customrep_fontawesome,
             'description' => $lang->setting_ougc_customrep_fontawesome_desc,
             'optionscode' => 'yesno',
             'value' => 0,
-        ),
-        'fontawesome_acp' => array(
+        ],
+        'fontawesome_acp' => [
             'title' => $lang->setting_ougc_customrep_fontawesome_acp,
             'description' => $lang->setting_ougc_customrep_fontawesome_acp_desc,
             'optionscode' => 'text',
             'value' => '<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">',
-        ),
-        'threadlist' => array(
+        ],
+        'threadlist' => [
             'title' => $lang->setting_ougc_customrep_threadlist,
             'description' => $lang->setting_ougc_customrep_threadlist_desc,
             'optionscode' => 'forumselect',
             'value' => -1,
-        ),
-        'portal' => array(
+        ],
+        'portal' => [
             'title' => $lang->setting_ougc_customrep_portal,
             'description' => $lang->setting_ougc_customrep_portal_desc,
             'optionscode' => 'forumselect',
             'value' => -1,
-        ),
-        'xthreads_hide' => array(
+        ],
+        'xthreads_hide' => [
             'title' => $lang->setting_ougc_xthreads_hide,
             'description' => $lang->setting_ougc_xthreads_hide_desc,
             'optionscode' => 'text',
             'value' => '',
-        ),
-        'stats_profile' => array(
+        ],
+        'stats_profile' => [
             'title' => $lang->setting_ougc_stats_profile,
             'description' => $lang->setting_ougc_stats_profile_desc,
             'optionscode' => 'yesno',
             'value' => 1,
-        ),
-        'enableajax' => array(
+        ],
+        'enableajax' => [
             'title' => $lang->setting_ougc_enableajax,
             'description' => $lang->setting_ougc_enableajax_desc,
             'optionscode' => 'yesno',
             'value' => 1,
-        ),
-        'guests_popup' => array(
+        ],
+        'guests_popup' => [
             'title' => $lang->setting_ougc_guests_popup,
             'description' => $lang->setting_ougc_guests_popup_desc,
             'optionscode' => 'yesno',
             'value' => 0,
-        ),
-        'myalerts' => array(
+        ],
+        'myalerts' => [
             'title' => $lang->setting_ougc_myalerts,
             'description' => $lang->setting_ougc_myalerts_desc,
             'optionscode' => 'yesno',
             'value' => 0,
-        ),
-        'multiple' => array(
+        ],
+        'multiple' => [
             'title' => $lang->setting_ougc_multiple,
             'description' => $lang->setting_ougc_multiple_desc,
             'optionscode' => 'yesno',
             'value' => 0,
-        ),
-    ));
+        ],
+    ]);
 
     // Fill cache
     $customrep->update_cache();
 
     // Insert template/group
-    $PL->templates('ougccustomrep', $lang->ougc_customrep, array(
+    $PL->templates('ougccustomrep', $lang->ougc_customrep, [
         '' => '<span id="customrep_{$customrep->post[\'pid\']}">{$reputations}</span>',
         'headerinclude' => <<<EOF
 		<script>
@@ -466,7 +466,7 @@ function ougc_customrep_activate()
 		</script>
 		{\$font_awesome}
 EOF
-    ,
+        ,
         'headerinclude_fa' => '<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">',
         'headerinclude_xthreads' => '$(\'#xt_{$xt_field}\').html( $(\'#xt_{$xt_field}\', $(data)).html() );',
         'headerinclude_xthreads_editpost' => '$(\'[name^="xthreads_{$xt_field}"]\').on(\'change\', function() {
@@ -538,7 +538,7 @@ if(typeof fields !== \'undefined\')
 	var ougccustomrep_xthreads_activate = 1;
 // -->
 </script>'
-    ));
+    ]);
 
     change_admin_permission('config', 'ougc_customrep', 1);
 
@@ -564,7 +564,7 @@ if(typeof fields !== \'undefined\')
     // Insert version code into cache
     $plugins = $cache->read('ougc_plugins');
     if (!$plugins) {
-        $plugins = array();
+        $plugins = [];
     }
 
     $info = ougc_customrep_info();
@@ -625,7 +625,7 @@ function ougc_customrep_install()
     $customrep->_db_verify_indexes();
 
     // Add a default reputation type
-    $customrep->insert_rep(array(
+    $customrep->insert_rep([
         'name' => 'Like',
         'image' => '{bburl}/images/ougc_customrep/default.png',
         'groups' => -1,
@@ -640,7 +640,7 @@ function ougc_customrep_install()
         'ignorepoints' => 0,
         'inmultiple' => 0,
         'createCoreReputationType' => 0,
-    ));
+    ]);
 }
 
 // _is_installed function
@@ -735,7 +735,7 @@ function ougc_customrep_users_merge()
     while ($lid = $db->fetch_field($query, 'lid')) {
         global $customrep;
 
-        $customrep->update_log($lid, array('uid' => $touid));
+        $customrep->update_log($lid, ['uid' => $touid]);
     }
 }
 
@@ -762,9 +762,9 @@ function ougc_customrep_admin_formcontainer_output_row(&$args)
 
     $saved_fields = explode(',', $selected_list);
 
-    $option_list = $selected_list = array();
+    $option_list = $selected_list = [];
     foreach ($threadfields as $tf) {
-        if (array_intersect(array($tf['field']), $saved_fields)) {
+        if (array_intersect([$tf['field']], $saved_fields)) {
             $selected_list[] = $tf['field'];
         }
         $option_list[$tf['field']] = $tf['field'];
@@ -774,7 +774,7 @@ function ougc_customrep_admin_formcontainer_output_row(&$args)
         'upsetting[ougc_customrep_xthreads_hide][]',
         $option_list,
         $selected_list,
-        array('id' => 'row_setting_ougc_customrep_xthreads_hide', 'size' => 5, 'multiple' => true)
+        ['id' => 'row_setting_ougc_customrep_xthreads_hide', 'size' => 5, 'multiple' => true]
     );
 }
 
@@ -883,11 +883,11 @@ function ougc_customrep_attachment_start()
         return;
     }
 
-    $required_rates = array();
+    $required_rates = [];
     foreach ($reps as $rid => $reputation) {
         if ($reputation['requireattach'] && is_member($reputation['groups']) && is_member(
                 $reputation['forums'],
-                array('usergroup' => $thread['fid'], 'additionalgroups' => '')
+                ['usergroup' => $thread['fid'], 'additionalgroups' => '']
             )) {
             if ($reputation['firstpost'] && !$is_first_post) {
                 continue;
@@ -928,7 +928,7 @@ function ougc_customrep_forumdisplay_thread()
 
     if (!$mybb->settings['ougc_customrep_threadlist'] || !is_member(
             $mybb->settings['ougc_customrep_threadlist'],
-            array('usergroup' => $fid, 'additionalgroups' => '')
+            ['usergroup' => $fid, 'additionalgroups' => '']
         )) {
         return;
     }
@@ -946,7 +946,7 @@ function ougc_customrep_forumdisplay_thread()
 
     eval('$footer .= "' . $templates->get('ougccustomrep_headerinclude') . '";');
 
-    $pids = array();
+    $pids = [];
     foreach ($threadcache as $thread) {
         $pids[(int)$thread['firstpost']] = (int)$thread['firstpost'];
     }
@@ -981,7 +981,7 @@ function ougc_customrep_forumdisplay_thread_end(&$args)
     }
 
     $customrep->set_post(
-        array('tid' => $thread['tid'], 'pid' => $thread['firstpost'], 'uid' => $thread['uid'], 'fid' => $thread['fid'])
+        ['tid' => $thread['tid'], 'pid' => $thread['firstpost'], 'uid' => $thread['uid'], 'fid' => $thread['fid']]
     );
 
     $customrep->set_url(get_thread_link($thread['tid']));
@@ -1001,14 +1001,14 @@ function ougc_customrep_portal_announcement()
 
     if ($mybb->settings['ougc_customrep_portal'] != -1 && !is_member(
             $mybb->settings['ougc_customrep_portal'],
-            array('usergroup' => $announcement['fid'], 'additionalgroups' => '')
+            ['usergroup' => $announcement['fid'], 'additionalgroups' => '']
         )) {
         return;
     }
 
     static $portal_cache = null;
     if ($portal_cache === null) {
-        $portal_cache = array();
+        $portal_cache = [];
 
         $query = $db->simple_select(
             'threads t',
@@ -1016,7 +1016,7 @@ function ougc_customrep_portal_announcement()
             "t.tid IN (0{$tids}){$annfidswhere}{$tunviewwhere} AND t.visible='1' AND t.closed NOT LIKE 'moved|%'"
         );
 
-        $pids = array();
+        $pids = [];
         while ($thread = $db->fetch_array($query)) {
             $fids[(int)$thread['fid']] = (int)$thread['fid'];
             $pids[(int)$thread['firstpost']] = (int)$thread['firstpost'];
@@ -1061,12 +1061,12 @@ function ougc_customrep_portal_announcement()
     }
 
     $customrep->set_post(
-        array(
+        [
             'tid' => $announcement['tid'],
             'pid' => $announcement['firstpost'],
             'uid' => $announcement['uid'],
             'fid' => $announcement['fid']
-        )
+        ]
     );
 
     $customrep->set_url(get_thread_link($announcement['tid']));
@@ -1123,7 +1123,7 @@ function ougc_customrep_postbit(&$post)
         eval('$footer .= "' . $templates->get('ougccustomrep_headerinclude') . '";');
 
         global $db, $thread;
-        $customrep->cache['query'] = array();
+        $customrep->cache['query'] = [];
 
         if ($customrep->firstpost_only) {
             $pids = "pid='{$thread['firstpost']}'";
@@ -1147,7 +1147,7 @@ function ougc_customrep_postbit(&$post)
             // > where the 'lid' key seems to be unnecessary
         }
 
-        $ignore_rules = array();
+        $ignore_rules = [];
         foreach ($customrep->cache['_reps'] as $rid => $rep) {
             if ((int)$rep['ignorepoints'] && isset($customrep->cache['query'][$rid])) {
                 $ignore_rules[$rid] = (int)$rep['ignorepoints'];
@@ -1156,13 +1156,13 @@ function ougc_customrep_postbit(&$post)
     }
 
     $customrep->set_post(
-        array(
+        [
             'tid' => $post['tid'],
             'pid' => $post['pid'],
             'uid' => $post['uid'],
             'fid' => $fid,
             'firstpost' => $thread['firstpost']
-        )
+        ]
     );
 
     if (!empty($ignore_rules)) {
@@ -1202,7 +1202,7 @@ function ougc_customrep_member_profile_end()
 
     $customrep->lang_load();
 
-    $where = array();
+    $where = [];
 
     // get forums user cannot view
     $unviewable = get_unviewable_forums(true);
@@ -1320,7 +1320,7 @@ function ougc_customrep_delete_thread(&$tid)
 {
     global $db;
 
-    $pids = array();
+    $pids = [];
 
     // First we get a list of all posts in this thread, we need this to later get a list of logs
     $query = $db->simple_select('posts', 'pid', 'tid=\'' . (int)$tid . '\'');
@@ -1360,7 +1360,7 @@ function ougc_customrep_merge_posts(&$args)
 
     // Now get the master PID, which MyBB doesn't offer..
     $masterpid = (int)$db->fetch_field(
-        $db->simple_select('posts', 'pid', $where, array('limit' => 1, 'order_by' => 'dateline', 'order_dir' => 'asc')),
+        $db->simple_select('posts', 'pid', $where, ['limit' => 1, 'order_by' => 'dateline', 'order_dir' => 'asc']),
         'pid'
     );
 
@@ -1368,7 +1368,7 @@ function ougc_customrep_merge_posts(&$args)
     $query = $db->simple_select('ougc_customrep_log', 'lid', $where);
     while ($lid = $db->fetch_field($query, 'lid')) {
         // Update this log
-        $customrep->update_log($lid, array('pid' => $masterpid));
+        $customrep->update_log($lid, ['pid' => $masterpid]);
     }
 }
 
@@ -1407,7 +1407,7 @@ function ougc_customrep_delete_reputation()
             global $uid, $user, $lang;
 
             // Create moderator log
-            log_moderator_action(array('uid' => $user['uid'], 'username' => $user['username']),
+            log_moderator_action(['uid' => $user['uid'], 'username' => $user['username']],
                 $lang->sprintf($lang->delete_reputation_log, $reputation['username'], $reputation['adduid']));
 
             redirect('reputation.php?uid=' . $uid, $lang->vote_deleted_message);
@@ -1425,7 +1425,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
     // Has this current user voted for this custom reputation?
     $voted = false;
 
-    $voted_rids = $firstpost_only = $unique_rids = array();
+    $voted_rids = $firstpost_only = $unique_rids = [];
 
     foreach ($customrep->cache['_reps'] as $rid => $rate) {
         if (!empty($rate['firstpost'])) {
@@ -1455,10 +1455,10 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
 
     $post_url = get_post_link($customrep->post['pid'], $customrep->post['tid']);
 
-    $input = array(
+    $input = [
         'pid' => $customrep->post['pid'],
         'my_post_key' => (isset($mybb->post_code) ? $mybb->post_code : generate_post_check()),
-    );
+    ];
 
     $ajax_enabled = $mybb->settings['use_xmlhttprequest'] && $mybb->settings['ougc_customrep_enableajax'];
 
@@ -1467,7 +1467,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
     }
 
     foreach ($customrep->cache['_reps'] as $rid => $reputation) {
-        if (!is_member($reputation['forums'], array('usergroup' => $customrep->post['fid'], 'additionalgroups' => '')
+        if (!is_member($reputation['forums'], ['usergroup' => $customrep->post['fid'], 'additionalgroups' => '']
         )) {
             continue;
         }
@@ -1599,7 +1599,7 @@ function ougc_customrep_request()
         'ougccustomrep_misc_row, ougccustomrep_misc_error, ougccustomrep_misc_multipage, ougccustomrep_misc, ougccustomrep_postbit_reputation, ougccustomrep_modal'
     );
 
-    if (!$customrep->active || !in_array($mybb->get_input('action'), array('customrep', 'customreppu'))) {
+    if (!$customrep->active || !in_array($mybb->get_input('action'), ['customrep', 'customreppu'])) {
         return;
     }
 
@@ -1629,13 +1629,13 @@ function ougc_customrep_request()
 
         $post = get_post($mybb->get_input('pid', 1));
         $customrep->set_post(
-            array(
+            [
                 'tid' => $post['tid'],
                 'pid' => $post['pid'],
                 'uid' => $post['uid'],
                 'subject' => $post['subject'],
                 'fid' => $fid
-            )
+            ]
         );
         unset($post);
 
@@ -1651,12 +1651,12 @@ function ougc_customrep_request()
             $parser = new postParser();
         }
 
-        $popupurl = $customrep->build_url(array(
+        $popupurl = $customrep->build_url([
             'pid' => $customrep->post['pid'],
             'my_post_key' => (isset($mybb->post_code) ? $mybb->post_code : generate_post_check()),
             'action' => 'customreppu',
             'rid' => $reputation['rid']
-        ));
+        ]);
 
         // Build multipage
         $query = $db->simple_select(
@@ -1682,7 +1682,7 @@ function ougc_customrep_request()
         }
 
         $customrep->set_url(get_post_link($customrep->post['pid'], $customrep->post['tid']));
-        $multipage_url = $customrep->build_url(false, array('page', 'pid', 'tid'));
+        $multipage_url = $customrep->build_url(false, ['page', 'pid', 'tid']);
         $multipage = multipage($count, $perpage, $page, "javascript:MyBB.popupWindow('/{$popupurl}&amp;page={page}');");
         if (!$multipage) {
             $multipage = '';
@@ -1821,7 +1821,7 @@ function ougc_customrep_request()
                     'ougc_customrep_log',
                     'rid',
                     "pid='{$customrep->post['pid']}' AND uid='{$uid}' AND rid='{$rid}'",
-                    array('limit' => 1)
+                    ['limit' => 1]
                 );
 
                 $already_rated = (bool)$db->fetch_field($query, 'rid');
@@ -1830,7 +1830,7 @@ function ougc_customrep_request()
                     $error($lang->ougc_customrep_error_multiple);
                 }
             } else {
-                $unique_rids = array();
+                $unique_rids = [];
 
                 foreach ($customrep->cache['_reps'] as $key => $rate) {
                     if (!$rate['inmultiple']) {
@@ -1844,7 +1844,7 @@ function ougc_customrep_request()
                     'ougc_customrep_log',
                     'lid',
                     "pid='{$customrep->post['pid']}' AND uid='{$uid}' AND rid IN ('{$unique_rids}')",
-                    array('limit' => 1)
+                    ['limit' => 1]
                 );
 
                 $already_rated = (bool)$db->fetch_field($query, 'lid');
@@ -1858,7 +1858,7 @@ function ougc_customrep_request()
                 'ougc_customrep_log',
                 'rid',
                 "pid='{$customrep->post['pid']}' AND uid='{$uid}' AND rid='{$rid}'",
-                array('limit' => 1)
+                ['limit' => 1]
             );
 
             $already_rated = (bool)$db->fetch_field($query, 'rid');
@@ -1871,7 +1871,7 @@ function ougc_customrep_request()
                 'ougc_customrep_log',
                 'lid',
                 "pid='{$customrep->post['pid']}' AND uid='{$uid}'",
-                array('limit' => 1)
+                ['limit' => 1]
             );
 
             $already_rated = (bool)$db->fetch_field($query, 'lid');
@@ -1931,11 +1931,11 @@ function ougc_customrep_request()
 
     $user_reputation = (int)$db->fetch_field($query, 'reputation');
 
-    $post = array(
+    $post = [
         'pid' => $customrep->post['pid'],
         'userreputation' => get_reputation($user_reputation, $customrep->post['uid']),
         'content' => ''
-    );
+    ];
 
     ougc_customrep_parse_postbit($post, $reputation['rid']);
 
@@ -1950,21 +1950,21 @@ function ougc_customrep_request()
         'userreputation'	=> $post['userreputation'],
     ));*/
 
-    ougc_customrep_ajax(array(
+    ougc_customrep_ajax([
         'success' => 1,
         'pid' => $customrep->post['pid'],
         'rid' => $reputation['rid'],
         'content' => $post['customrep'],
         'content_rep' => $post['customrep_' . $reputation['rid']],
         'userreputation' => $post['userreputation'],
-    ));
+    ]);
 }
 
 function ougc_customrep_ajax_error($error)
 {
-    ougc_customrep_ajax(array(
+    ougc_customrep_ajax([
         'errors' => $error
-    ));
+    ]);
 }
 
 function ougc_customrep_ajax($data)
@@ -2067,7 +2067,7 @@ function ougc_customrep_xthreads_hide($value = '', $field = true)
             'ougc_customrep_log',
             'lid',
             $where,
-            array('limit', 1)
+            ['limit', 1]
         );
 
         if ((int)$db->num_rows($query) < 1) {
@@ -2097,13 +2097,13 @@ class OUGC_CustomRep
     public $url = 'index.php?module=config-plugins';
 
     // Set the cache
-    public $cache = array(
-        'reps' => array(),
-        'logs' => array(),
-        'images' => array(),
-        '_reps' => array(),
+    public $cache = [
+        'reps' => [],
+        'logs' => [],
+        'images' => [],
+        '_reps' => [],
         'query' => null
-    );
+    ];
 
     // RID which has just been updated/inserted/deleted
     public $rid = 0;
@@ -2112,7 +2112,7 @@ class OUGC_CustomRep
     public $allowed_forum = false;
 
     // Set current handling post
-    public $post = array();
+    public $post = [];
 
     // Is the plugin active? Default is false
     public $active = false;
@@ -2136,7 +2136,7 @@ class OUGC_CustomRep
             $this->active = isset($plugins['active']['ougc_customrep']);
         }
 
-        $this->rids = array();
+        $this->rids = [];
 
         $this->firstpost_only = (bool)$mybb->settings['ougc_customrep_firstpost'];
 
@@ -2154,8 +2154,8 @@ class OUGC_CustomRep
     // List of tables
     public function _db_tables()
     {
-        $tables = array(
-            'ougc_customrep' => array(
+        $tables = [
+            'ougc_customrep' => [
                 'rid' => 'int UNSIGNED NOT NULL AUTO_INCREMENT',
                 'name' => "varchar(100) NOT NULL DEFAULT ''",
                 'image' => "varchar(255) NOT NULL DEFAULT ''",
@@ -2173,8 +2173,8 @@ class OUGC_CustomRep
                 'inmultiple' => "smallint(5) NOT NULL DEFAULT '0'",
                 'createCoreReputationType' => "smallint(5) NOT NULL DEFAULT '0'",
                 'prymary_key' => 'rid'
-            ),
-            'ougc_customrep_log' => array(
+            ],
+            'ougc_customrep_log' => [
                 'lid' => 'int UNSIGNED NOT NULL AUTO_INCREMENT',
                 'pid' => "int NOT NULL DEFAULT '0'",
                 'uid' => "int NOT NULL DEFAULT '0'",
@@ -2183,8 +2183,8 @@ class OUGC_CustomRep
                 'coreReputationID' => "int NOT NULL DEFAULT '0'",
                 'dateline' => "int(10) NOT NULL DEFAULT '0'",
                 'prymary_key' => 'lid'
-            )
-        );
+            ]
+        ];
 
         return $tables;
     }
@@ -2192,12 +2192,12 @@ class OUGC_CustomRep
     // List of columns
     public function _db_columns()
     {
-        $tables = array(
-            'reputation' => array(
+        $tables = [
+            'reputation' => [
                 'lid' => "int NOT NULL DEFAULT '0'",
                 'ougcCustomReputationCreatedOnLogID' => "int NOT NULL DEFAULT '0'"
-            ),
-        );
+            ],
+        ];
 
         return $tables;
     }
@@ -2342,7 +2342,7 @@ class OUGC_CustomRep
     }
 
     // Build an url parameter
-    public function build_url($urlappend = array(), $fetch_input_url = false)
+    public function build_url($urlappend = [], $fetch_input_url = false)
     {
         return urlHandlerBuild($urlappend, $fetch_input_url);
     }
@@ -2358,7 +2358,7 @@ class OUGC_CustomRep
 
         if ($ignore !== false) {
             if (!is_array($ignore)) {
-                $ignore = array($ignore);
+                $ignore = [$ignore];
             }
             foreach ($location as $key => $input) {
                 $input = explode('=', $input);
@@ -2368,7 +2368,7 @@ class OUGC_CustomRep
             }
         }
 
-        $url = array();
+        $url = [];
         foreach ($location as $input) {
             $input = explode('=', $input);
             $url[$input[0]] = $input[1];
@@ -2384,11 +2384,11 @@ class OUGC_CustomRep
             global $settings, $theme;
             $this->cache['images'][$rid] = false;
 
-            $replaces = array(
+            $replaces = [
                 '{bburl}' => $settings['bburl'],
                 '{homeurl}' => $settings['homeurl'],
                 '{imgdir}' => $theme['imgdir']
-            );
+            ];
 
             $this->cache['images'][$rid] = str_replace(array_keys($replaces), array_values($replaces), $image);
         }
@@ -2460,11 +2460,11 @@ class OUGC_CustomRep
     }
 
     // Insert a new custom reputation to the DB
-    public function insert_rep($data = array(), $update = false, $rid = 0)
+    public function insert_rep($data = [], $update = false, $rid = 0)
     {
         global $db;
 
-        $insert_data = array();
+        $insert_data = [];
 
         if (isset($data['name'])) {
             $insert_data['name'] = $db->escape_string($data['name']);
@@ -2552,7 +2552,7 @@ class OUGC_CustomRep
     }
 
     // Update espesific custom reputation
-    public function update_rep($data = array(), $rid = 0)
+    public function update_rep($data = [], $rid = 0)
     {
         $this->insert_rep($data, true, $rid);
     }
@@ -2561,7 +2561,7 @@ class OUGC_CustomRep
     public function set_rep_data($rid = null)
     {
         if (isset($rid) && ($reputation = $this->get_rep($rid))) {
-            $this->rep_data = array(
+            $this->rep_data = [
                 'name' => $reputation['name'],
                 'image' => $reputation['image'],
                 'groups' => explode(',', $reputation['groups']),
@@ -2577,18 +2577,18 @@ class OUGC_CustomRep
                 'inmultiple' => $reputation['inmultiple'],
                 'createCoreReputationType' => $reputation['createCoreReputationType'],
                 'reptype' => $reputation['reptype'],
-            );
+            ];
         } else {
             global $db;
 
             $query = $db->simple_select('ougc_customrep', 'MAX(disporder) as max_disporder');
             $disporder = (int)$db->fetch_field($query, 'max_disporder');
 
-            $this->rep_data = array(
+            $this->rep_data = [
                 'name' => '',
                 'image' => '',
-                'groups' => array(),
-                'forums' => array(),
+                'groups' => [],
+                'forums' => [],
                 'disporder' => ++$disporder,
                 'visible' => 1,
                 'firstpost' => 1,
@@ -2600,7 +2600,7 @@ class OUGC_CustomRep
                 'inmultiple' => 0,
                 'createCoreReputationType' => 0,
                 'reptype' => '',
-            );
+            ];
         }
 
         global $mybb;
@@ -2623,7 +2623,7 @@ class OUGC_CustomRep
         global $lang;
         $valid = true;
 
-        $this->validate_errors = array();
+        $this->validate_errors = [];
         $name = strlen(trim($this->rep_data['name']));
         if ($name < 1 || $name > 100) {
             $this->validate_errors[] = $lang->ougc_customrep_error_invalidname;
@@ -2722,7 +2722,7 @@ class OUGC_CustomRep
         }
 
         if (!is_array($this->rids)) {
-            $this->rids = array();
+            $this->rids = [];
         }
 
         $this->rids = array_merge($this->rids, array_keys($reps));
@@ -2731,7 +2731,7 @@ class OUGC_CustomRep
     }
 
     // Set post data
-    public function set_post(array $post = array())
+    public function set_post(array $post = [])
     {
         $this->post = $post;
     }
@@ -2769,11 +2769,11 @@ class OUGC_CustomRep
     {
         global $db, $plugins;
 
-        $args = array(
+        $args = [
             'this' => &$this,
             'rid' => $rid,
-            'logs' => array()
-        );
+            'logs' => []
+        ];
 
         // Delete all logs.
         $query = $db->simple_select('ougc_customrep_log', 'lid', 'rid=\'' . (int)$rid . '\'');
@@ -2796,12 +2796,12 @@ class OUGC_CustomRep
         global $mybb;
         global $db, $plugins;
 
-        $args = array(
+        $args = [
             'this' => &$this,
             'lid' => $lid,
-            'uids' => array(),
-            'rids' => array()
-        );
+            'uids' => [],
+            'rids' => []
+        ];
 
         $query = $db->simple_select('reputation', 'rid, uid, pid', 'lid=\'' . (int)$lid . '\'');
         while ($rep = $db->fetch_array($query)) {
@@ -2843,20 +2843,20 @@ class OUGC_CustomRep
 
         global $db, $mybb, $plugins;
 
-        $lid = (int)$db->insert_query('ougc_customrep_log', array(
+        $lid = (int)$db->insert_query('ougc_customrep_log', [
             'pid' => (int)$this->post['pid'],
             'uid' => (int)$mybb->user['uid'],
             'rid' => (int)$rid,
             'points' => (float)$points,
             'dateline' => TIME_NOW,
             'coreReputationID' => $coreReputationID,
-        ));
+        ]);
 
-        $args = array(
+        $args = [
             'this' => &$this,
             'reptype' => &$reptype,
             'lid' => $lid
-        );
+        ];
 
         // MyAlerts compatibility
         !$this->myalerts_installed || $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
@@ -2868,7 +2868,7 @@ class OUGC_CustomRep
         if ($reptype !== 0) {
             global $Alerts;
 
-            $rip = (int)$db->insert_query('reputation', array(
+            $rip = (int)$db->insert_query('reputation', [
                 'pid' => (int)$this->post['pid'],
                 'uid' => (int)$this->post['uid'],
                 'adduid' => (int)$mybb->user['uid'],
@@ -2876,7 +2876,7 @@ class OUGC_CustomRep
                 'comments' => '',
                 'lid' => $lid,
                 'dateline' => TIME_NOW
-            ));
+            ]);
 
             if ($rip && $this->myalerts_installed) {
                 $alertType = $alertTypeManager->getByCode('rep');
@@ -2900,12 +2900,12 @@ class OUGC_CustomRep
 
             if ($alertType != null && $alertType->getEnabled()) {
                 $alert = new MybbStuff_MyAlerts_Entity_Alert($this->post['uid'], $alertType, $lid);
-                $alert->setExtraDetails(array(
+                $alert->setExtraDetails([
                     'pid' => $this->post['pid'],
                     'tid' => $this->post['tid'],
                     'fid' => $this->post['fid'],
                     'rid' => $rid,
-                ));
+                ]);
 
                 $alsert = MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
             }
@@ -2915,12 +2915,12 @@ class OUGC_CustomRep
     }
 
     // Update a log
-    public function update_log($lid, $data = array())
+    public function update_log($lid, $data = [])
     {
         global $db;
         $lid = (int)$lid;
 
-        $update_data = array();
+        $update_data = [];
         if (isset($data['pid'])) {
             $update_data['pid'] = (int)$data['pid'];
         }
@@ -2942,9 +2942,9 @@ class OUGC_CustomRep
                 $query = $db->simple_select('reputation', 'rid, uid', 'lid=\'' . (int)$lid . '\'');
                 while ($rep = $db->fetch_array($query)) {
                     // Actually update reputation
-                    $db->update_query('reputation', array(
+                    $db->update_query('reputation', [
                         'pid' => $update_data['pid'],
-                    ), 'rid=\'' . (int)$rep['rid'] . '\'');
+                    ], 'rid=\'' . (int)$rep['rid'] . '\'');
 
                     // Recount the reputation of this user - keep it in sync.
                     $this->sync_reputation($rep['uid']);
@@ -2964,7 +2964,7 @@ class OUGC_CustomRep
         $query = $db->simple_select('reputation', 'SUM(reputation) AS reputation_count', 'uid=\'' . $uid . '\'');
         $reputation_count = (int)$db->fetch_field($query, 'reputation_count');
 
-        $db->update_query('users', array('reputation' => $reputation_count), 'uid=\'' . $uid . '\'');
+        $db->update_query('users', ['reputation' => $reputation_count], 'uid=\'' . $uid . '\'');
     }
 }
 
@@ -2981,7 +2981,7 @@ if (!function_exists('control_object')) {
         $checkstr = 'O:' . strlen($classname) . ':"' . $classname . '":';
         $checkstr_len = strlen($checkstr);
         if (substr($objserial, 0, $checkstr_len) == $checkstr) {
-            $vars = array();
+            $vars = [];
             // grab resources/object etc, stripping scope info from keys
             foreach ((array)$obj as $k => $v) {
                 if ($p = strrpos($k, "\0")) {

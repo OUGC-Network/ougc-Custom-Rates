@@ -43,22 +43,22 @@ $customrep->set_url('index.php?module=config-ougc_customrep');
 $customrep->lang_load();
 
 // Page tabs
-$sub_tabs['ougc_customrep_view'] = array(
+$sub_tabs['ougc_customrep_view'] = [
     'title' => $lang->ougc_customrep_tab_view,
     'link' => $customrep->build_url(),
     'description' => $lang->ougc_customrep_tab_view_d
-);
-$sub_tabs['ougc_customrep_add'] = array(
+];
+$sub_tabs['ougc_customrep_add'] = [
     'title' => $lang->ougc_customrep_tab_add,
     'link' => $customrep->build_url(['action' => 'add']),
     'description' => $lang->ougc_customrep_tab_add_d
-);
+];
 if ($mybb->get_input('action') == 'edit') {
-    $sub_tabs['ougc_customrep_edit'] = array(
+    $sub_tabs['ougc_customrep_edit'] = [
         'title' => $lang->ougc_customrep_tab_edit,
-        'link' => $customrep->build_url(array('action' => 'edit', 'rid' => $mybb->get_input('rid', 1))),
+        'link' => $customrep->build_url(['action' => 'edit', 'rid' => $mybb->get_input('rid', 1)]),
         'description' => $lang->ougc_customrep_tab_edit_d
-    );
+    ];
 }
 
 $page->add_breadcrumb_item($lang->ougc_customrep, $sub_tabs['ougc_customrep_view']['link']);
@@ -84,7 +84,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_edit');
     }
 
-    foreach (array('groups', 'forums') as $key) {
+    foreach (['groups', 'forums'] as $key) {
         if (!isset($mybb->input[$key]) && isset($reputation[$key])) {
             if (isset($reputation[$key])) {
                 $mybb->input[$key] = $reputation[$key];
@@ -95,7 +95,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         unset($key);
     }
 
-    $group_checked = array('all' => '', 'custom' => '', 'none' => '');
+    $group_checked = ['all' => '', 'custom' => '', 'none' => ''];
     if ($mybb->get_input('groups_type') == 'all' || !$mybb->get_input('groups_type') && (int)$mybb->get_input(
             'groups'
         ) === -1) {
@@ -114,7 +114,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $group_checked['custom'] = 'checked="checked"';
     }
 
-    $forum_checked = array('all' => '', 'custom' => '', 'none' => '');
+    $forum_checked = ['all' => '', 'custom' => '', 'none' => ''];
     if ($mybb->get_input('forums_type') == 'all' || !$mybb->get_input('forums_type') && (int)$mybb->get_input(
             'forums'
         ) === -1) {
@@ -155,7 +155,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $form = new Form($customrep->build_url(['action' => 'add']), 'post');
         $form_container = new FormContainer($sub_tabs['ougc_customrep_add']['title']);
     } else {
-        $form = new Form($customrep->build_url(array('action' => 'edit', 'rid' => $reputation['rid'])), 'post');
+        $form = new Form($customrep->build_url(['action' => 'edit', 'rid' => $reputation['rid']]), 'post');
         $form_container = new FormContainer($sub_tabs['ougc_customrep_edit']['title']);
     }
 
@@ -190,7 +190,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 					<td>" . $form->generate_group_select(
             'groups[]',
             $mybb->get_input('groups', 2),
-            array('multiple' => true, 'size' => 5)
+            ['multiple' => true, 'size' => 5]
         ) . "</td>
 				</tr>
 			</table>
@@ -206,8 +206,8 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $lang->ougc_customrep_f_groups_d,
         $groups_select,
         '',
-        array(),
-        array('id' => 'row_groups')
+        [],
+        ['id' => 'row_groups']
     );
 
     $forums_select = "
@@ -221,7 +221,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 					<td>" . $form->generate_forum_select(
             'forums[]',
             $mybb->get_input('forums', 2),
-            array('multiple' => true, 'size' => 5)
+            ['multiple' => true, 'size' => 5]
         ) . "</td>
 				</tr>
 			</table>
@@ -237,8 +237,8 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $lang->ougc_customrep_f_forums_d,
         $forums_select,
         '',
-        array(),
-        array('id' => 'row_forums')
+        [],
+        ['id' => 'row_forums']
     );
 
     $form_container->output_row(
@@ -247,7 +247,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $form->generate_text_box(
             'disporder',
             $customrep->rep_data['disporder'],
-            array('style' => 'text-align: center; width: 30px;" maxlength="5')
+            ['style' => 'text-align: center; width: 30px;" maxlength="5']
         )
     );
     $form_container->output_row(
@@ -304,10 +304,10 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     $form_container->end();
 
     $form->output_submit_wrapper(
-        array(
+        [
             $form->generate_submit_button($lang->ougc_customrep_button_submit),
             $form->generate_reset_button($lang->reset)
-        )
+        ]
     );
 
     $form->end();
@@ -331,18 +331,18 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
     $page->add_breadcrumb_item($lang->delete);
 
-    $page->output_confirm_action($customrep->build_url(array('action' => 'delete', 'rid' => $mybb->get_input('rid', 1)))
+    $page->output_confirm_action($customrep->build_url(['action' => 'delete', 'rid' => $mybb->get_input('rid', 1)])
     );
 } else {
     $page->output_header($lang->ougc_customrep);
     $page->output_nav_tabs($sub_tabs, 'ougc_customrep_view');
 
     $table = new Table();
-    $table->construct_header($lang->ougc_customrep_h_image, array('width' => '10%', 'class' => 'align_center'));
-    $table->construct_header($lang->ougc_customrep_h_name, array('width' => '60%'));
-    $table->construct_header($lang->ougc_customrep_h_order, array('width' => '10%', 'class' => 'align_center'));
-    $table->construct_header($lang->ougc_customrep_h_visible, array('width' => '10%', 'class' => 'align_center'));
-    $table->construct_header($lang->options, array('width' => '10%', 'class' => 'align_center'));
+    $table->construct_header($lang->ougc_customrep_h_image, ['width' => '10%', 'class' => 'align_center']);
+    $table->construct_header($lang->ougc_customrep_h_name, ['width' => '60%']);
+    $table->construct_header($lang->ougc_customrep_h_order, ['width' => '10%', 'class' => 'align_center']);
+    $table->construct_header($lang->ougc_customrep_h_visible, ['width' => '10%', 'class' => 'align_center']);
+    $table->construct_header($lang->options, ['width' => '10%', 'class' => 'align_center']);
 
     // Multi-page support
     $perpage = (int)(isset($mybb->input['perpage']) ? $mybb->get_input('perpage', 1) : 10);
@@ -365,7 +365,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     if ($repcount < 1) {
         $table->construct_cell(
             '<div align="center">' . $lang->ougc_customrep_message_empty . '</div>',
-            array('colspan' => 5)
+            ['colspan' => 5]
         );
         $table->construct_row();
 
@@ -375,12 +375,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             'ougc_customrep',
             '*',
             '',
-            array('limit' => $perpage, 'limit_start' => $start, 'order_by' => 'disporder')
+            ['limit' => $perpage, 'limit_start' => $start, 'order_by' => 'disporder']
         );
 
         if ($mybb->request_method == 'post' && $mybb->get_input('action') == 'updatedisporder') {
             foreach ($mybb->input['disporder'] as $rid => $disporder) {
-                $customrep->update_rep(array('disporder' => $disporder), $rid);
+                $customrep->update_rep(['disporder' => $disporder], $rid);
             }
             $customrep->update_cache();
             $customrep->admin_redirect();
@@ -395,28 +395,28 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
                 $image = '<img src="' . $customrep->get_image($reputation['image'], $reputation['rid']) . '" />';
             }
 
-            $link = $customrep->build_url(array('action' => 'edit', 'rid' => $reputation['rid']));
+            $link = $customrep->build_url(['action' => 'edit', 'rid' => $reputation['rid']]);
 
-            $table->construct_cell($image, array('class' => 'align_center'));
+            $table->construct_cell($image, ['class' => 'align_center']);
             $table->construct_cell("<a href='{$link}'>" . htmlspecialchars_uni($reputation['name']) . '</a>');
             $table->construct_cell(
                 $form->generate_text_box(
                     'disporder[' . $reputation['rid'] . ']',
                     (int)$reputation['disporder'],
-                    array('style' => 'text-align: center; width: 30px;')
+                    ['style' => 'text-align: center; width: 30px;']
                 ),
-                array('class' => 'align_center')
+                ['class' => 'align_center']
             );
 
-            $table->construct_cell(($reputation['visible'] ? $lang->yes : $lang->no), array('class' => 'align_center'));
+            $table->construct_cell(($reputation['visible'] ? $lang->yes : $lang->no), ['class' => 'align_center']);
 
             $popup = new PopupMenu('rep_' . $reputation['rid'], $lang->options);
             $popup->add_item($lang->ougc_customrep_tab_edit, $link);
             $popup->add_item(
                 $lang->delete,
-                $customrep->build_url(array('action' => 'delete', 'rid' => $reputation['rid']))
+                $customrep->build_url(['action' => 'delete', 'rid' => $reputation['rid']])
             );
-            $table->construct_cell($popup->fetch(), array('class' => 'align_center'));
+            $table->construct_cell($popup->fetch(), ['class' => 'align_center']);
 
             $table->construct_row();
         }
@@ -447,10 +447,10 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $table->output($sub_tabs['ougc_customrep_view']['title'] . $limitstring);
 
         $form->output_submit_wrapper(
-            array(
+            [
                 $form->generate_submit_button($lang->ougc_customrep_button_disponder),
                 $form->generate_reset_button($lang->reset)
-            )
+            ]
         );
         $form->end();
 
