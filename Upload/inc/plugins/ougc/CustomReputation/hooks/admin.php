@@ -71,7 +71,7 @@ function admin_config_action_handler(array $actionObjects): array
 
 function admin_config_menu(array $subMenuItems): array
 {
-    global $lang, $customrep;
+    global $lang;
 
     loadLanguage();
 

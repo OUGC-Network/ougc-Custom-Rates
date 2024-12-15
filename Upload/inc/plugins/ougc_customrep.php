@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 use function ougc\CustomReputation\Core\addHooks;
 use function ougc\CustomReputation\Core\loadLanguage;
+use function ougc\CustomReputation\Core\logDelete;
+use function ougc\CustomReputation\Core\reputationSync;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
@@ -59,6 +61,10 @@ if (defined('IN_ADMINCP')) {
 
     addHooks('ougc\CustomReputation\Hooks\Forum');
 }
+
+require_once ROOT . '/hooks/shared.php';
+
+addHooks('ougc\CustomReputation\Hooks\Shared');
 
 global $plugins;
 
@@ -104,8 +110,6 @@ if (defined('IN_ADMINCP')) {
         }
     }
 }
-
-$plugins->add_hook('datahandler_user_delete_content', 'ougc_customrep_user_delete_content');
 
 // PLUGINLIBRARY
 defined('PLUGINLIBRARY') or define('PLUGINLIBRARY', MYBB_ROOT . 'inc/plugins/pluginlibrary.php');
@@ -778,17 +782,6 @@ function ougc_customrep_admin_formcontainer_output_row(&$args)
     );
 }
 
-// Delete logs from users which are being deleted
-function ougc_customrep_user_delete_content(&$dh)
-{
-    global $db, $customrep;
-
-    $query = $db->simple_select('ougc_customrep_log', 'lid', 'uid IN(' . $dh->delete_uids . ')');
-    while ($lid = $db->fetch_field($query, 'lid')) {
-        $customrep->delete_log($lid);
-    }
-}
-
 // Required for xThreads hack
 function ougc_customrep_editpost_end()
 {
@@ -1334,7 +1327,7 @@ function ougc_customrep_delete_thread(&$tid)
         // get log ids and delete them all, this may take some time
         $query = $db->simple_select('ougc_customrep_log', 'lid', 'pid IN (\'' . implode('\',\'', $pids) . '\')');
         while ($lid = $db->fetch_field($query, 'lid')) {
-            $customrep->delete_log($lid);
+            logDelete((int)$lid);
         }
     }
 }
@@ -1348,7 +1341,7 @@ function ougc_customrep_delete_post(&$pid)
     // get log ids and delete them all, this may take some time
     $query = $db->simple_select('ougc_customrep_log', 'lid', 'pid=\'' . (int)$pid . '\'');
     while ($lid = $db->fetch_field($query, 'lid')) {
-        $customrep->delete_log($lid);
+        logDelete((int)$lid);
     }
 }
 
@@ -1402,7 +1395,7 @@ function ougc_customrep_delete_reputation()
         // Delete the specified reputation log
         if ((int)$reputation['lid'] > 0) {
             // Delete the specified reputation & log
-            $customrep->delete_log($reputation['lid']);
+            logDelete((int)$reputation['lid']);
 
             global $uid, $user, $lang;
 
@@ -1810,7 +1803,7 @@ function ougc_customrep_request()
                 newpoints_addpoints($log['uid'], $log['points']); // Give back to rate author
             }
 
-            $customrep->delete_log($log['lid']);
+            logDelete((int)$log['lid']);
         }
     } else {
         $uid = $mybb->user['uid'];
@@ -2779,7 +2772,7 @@ class OUGC_CustomRep
         $query = $db->simple_select('ougc_customrep_log', 'lid', 'rid=\'' . (int)$rid . '\'');
         while ($lid = $db->fetch_field($query, 'lid')) {
             $args['logs'][$lid] = 1;
-            $this->delete_log($lid);
+            logDelete((int)$lid);
         }
 
         // Now delete this custom reputation.
@@ -2788,50 +2781,6 @@ class OUGC_CustomRep
         $plugins->run_hooks('ouc_customrep_delete_rep', $args);
 
         return true;
-    }
-
-    // Delete a reputation log. This may take up some time.
-    public function delete_log($lid)
-    {
-        global $mybb;
-        global $db, $plugins;
-
-        $args = [
-            'this' => &$this,
-            'lid' => $lid,
-            'uids' => [],
-            'rids' => []
-        ];
-
-        $query = $db->simple_select('reputation', 'rid, uid, pid', 'lid=\'' . (int)$lid . '\'');
-        while ($rep = $db->fetch_array($query)) {
-            $args['uids'][(int)$rep['uid']] = 1;
-            $args['rids'][(int)$rep['rid']] = 1;
-
-            // Delete reputation
-            $db->delete_query('reputation', 'rid=\'' . (int)$rep['rid'] . '\'');
-
-            // Recount the reputation of this user - keep it in sync.
-            $this->sync_reputation($rep['uid']);
-
-            // MyAlerts compatibility
-            if ($rep['rid'] && isset($Alerts) && is_object($Alerts) && method_exists($Alerts, 'addAlert')) {
-                $db->delete_query(
-                    'alerts',
-                    'uid =\'' . (int)$rep['uid'] . '\' AND from_id=\'' . (int)$mybb->user['uid'] . '\' AND alert_type=\'rep\' AND from_id=\'' . (int)$rep['pid'] . '\''
-                );
-            }
-        }
-
-        $plugins->run_hooks('ouc_customrep_delete_log', $args);
-
-        // Now delete this log.
-        /*$query = $db->simple_select('ougc_customrep_log', 'pid', 'lid=\''.(int)$lid.'\'');
-        while($pid = $db->fetch_array($query, 'pid'))
-        {
-            $db->delete_query('ougc_customrep_log', 'pid=\''.(int)$pid.'\' AND uid=\''.(int)$mybb->user['uid'].'\'');
-        }*/
-        $db->delete_query('ougc_customrep_log', 'lid=\'' . (int)$lid . '\'');
     }
 
     // Insert a log into the DB
@@ -2891,7 +2840,7 @@ class OUGC_CustomRep
             if ($reptype != 0) // we don't add neutral reputations, so don't sync
             {
                 // Recount the reputation of this user - keep it in sync.
-                $this->sync_reputation($this->post['uid']);
+                reputationSync((int)$this->post['uid']);
             }
         }
 
@@ -2947,24 +2896,12 @@ class OUGC_CustomRep
                     ], 'rid=\'' . (int)$rep['rid'] . '\'');
 
                     // Recount the reputation of this user - keep it in sync.
-                    $this->sync_reputation($rep['uid']);
+                    reputationSync((int)$rep['uid']);
                 }
             }
             return true;
         }
         return false;
-    }
-
-    // Recount the reputation of this user - keep it in sync.
-    public function sync_reputation($uid)
-    {
-        global $db;
-        $uid = (int)$uid;
-
-        $query = $db->simple_select('reputation', 'SUM(reputation) AS reputation_count', 'uid=\'' . $uid . '\'');
-        $reputation_count = (int)$db->fetch_field($query, 'reputation_count');
-
-        $db->update_query('users', ['reputation' => $reputation_count], 'uid=\'' . $uid . '\'');
     }
 }
 

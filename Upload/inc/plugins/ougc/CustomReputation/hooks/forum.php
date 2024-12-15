@@ -36,6 +36,8 @@ use OUGC_CustomRep_AlertFormmatter;
 
 use function ougc\CustomReputation\Core\loadLanguage;
 
+use function ougc\CustomReputation\Core\logDelete;
+
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
@@ -215,7 +217,7 @@ function reputation_do_add_end(): bool
                 $existingLogData = $customrep->get_log($exitingLogID);
 
                 if ($executeCustomReputation === false && !empty($existingLogData['lid'])) {
-                    $customrep->delete_log($exitingLogID);
+                    logDelete((int)$exitingLogID);
 
                     $db->update_query(
                         'reputation',
@@ -238,9 +240,7 @@ function reputation_delete_end(): bool
         return false;
     }
 
-    global $customrep;
-
-    $customrep->delete_log((int)$existing_reputation['ougcCustomReputationCreatedOnLogID']);
+    logDelete((int)$existing_reputation['ougcCustomReputationCreatedOnLogID']);
 
     return true;
 }
