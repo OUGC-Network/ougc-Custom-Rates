@@ -588,13 +588,15 @@ function logDelete(int $logID): bool
     return true;
 }
 
-function logAdminAction(int $rateID = 0)
+function logAdminAction(int $rateID = 0): bool
 {
     if (!empty($rateID)) {
         log_admin_action($rateID);
     } else {
         log_admin_action();
     }
+
+    return true;
 }
 
 function newPointsIsInstalled(): bool
@@ -750,4 +752,257 @@ function forumGetRates(int $forumID): array
     }
 
     return $forumsCache[$forumID];
+}
+
+function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 0): bool
+{
+    global $customrep;
+
+    $customrep->post['pid'] = $postID; // to remove later
+
+    $postData = get_post($postID);
+
+    if (empty($postData['pid'])) {
+        return false;
+    }
+
+    $threadData = get_thread($postData['tid']);
+
+    if (empty($threadData['tid'])) {
+        return false;
+    }
+
+    $forumID = (int)$threadData['fid'];
+
+    $forumRatesCache = forumGetRates($forumID);
+
+    if (empty($forumRatesCache)) {
+        return false;
+    }
+
+    global $mybb;
+
+    $ratesListCode = '';
+
+    // Has this current user voted for this custom reputation?
+    $voted = false;
+
+    $voted_rids = $firstpost_only = $unique_rids = [];
+
+    global $customReputationCacheQuery;
+
+    is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
+
+    foreach ($forumRatesCache as $rateID => $rateData) {
+        if (!empty($rateData['firstpost'])) {
+            $firstpost_only[$rateID] = $rateID;
+        }
+
+        if (empty($rateData['inmultiple'])) {
+            $unique_rids[$rateID] = $rateID;
+        }
+
+        if (isset($customReputationCacheQuery[$rateID][$postID])) {
+            //TODO
+            foreach ($customReputationCacheQuery[$rateID][$postID] as $votes) {
+                if (isset($votes[$mybb->user['uid']])) {
+                    $voted_rids[$rateID] = $rateID;
+
+                    $voted = true;
+                }
+            }
+        }
+    }
+
+    unset($rateID, $rateData);
+
+    global $templates, $lang;
+
+    loadLanguage();
+
+    $post_url = get_post_link($postID, $postData['tid']);
+
+    $input = [
+        'pid' => $postID,
+        'my_post_key' => (isset($mybb->post_code) ? $mybb->post_code : generate_post_check()),
+    ];
+
+    $ajaxIsEnabled = $mybb->settings['use_xmlhttprequest'] && $mybb->settings['ougc_customrep_enableajax'];
+
+    if (!$ajaxIsEnabled) {
+        $lang->ougc_customrep_viewlatest = $lang->ougc_customrep_viewlatest_noajax;
+    }
+
+    foreach ($forumRatesCache as $rateID => $reputation) {
+        if (!is_member($reputation['forums'], ['usergroup' => $forumID, 'additionalgroups' => '']
+        )) {
+            continue;
+        }
+
+        // $firstpost_only[$rateID] stores the tid
+        // $threadData['firstpost'] is only set on post bit, since portal and thread list posts are indeed the first post
+        if (!empty($firstpost_only[$rateID]) && !empty($threadData['firstpost']) && (int)$threadData['firstpost'] !== $postID) {
+            continue;
+        }
+
+        $rateName = htmlspecialchars_uni(rateGetName($rateID) ?? $reputation['name']);
+
+        $input['action'] = 'customReputation';
+
+        $input['rid'] = $rateID;
+
+        $addDeleteUrl = urlHandlerBuild($input);
+
+        $input['action'] = 'customReputationPopUp';
+
+        $ratePopUpUrl = $popupurl = urlHandlerBuild($input);
+
+        $totalReceivedRates = 0;
+
+        $rateExtraClass = '';
+
+        if ($ajaxIsEnabled) {
+            $addDeleteUrl = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '0');";
+
+            if (!empty($mybb->settings['ougc_customrep_delete']) && $reputation['allowdeletion']) {
+                $link_delete = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '1');";
+            }
+        }
+
+        // Count the votes for this reputation in this post
+        if (isset($customReputationCacheQuery[$rateID][$postID])) {
+            $totalReceivedRates = count($customReputationCacheQuery[$rateID][$postID]);
+        }
+
+        $totalReceivedRates = my_number_format($totalReceivedRates);
+
+        $voted_this = false;
+
+        if (isset($voted_rids[$rateID])) {
+            $voted_this = true;
+        }
+
+        $userRatedThisClass = '';
+
+        if ($voted_this) {
+            $userRatedThisClass = 'voted';
+        }
+
+        $voted_class = &$userRatedThisClass;
+
+        $totalReceivedRates = eval(getTemplate('rep_number', false));
+
+        $number = &$totalReceivedRates;
+
+        $imageTemplateName = 'rep_img';
+
+        if (!empty($mybb->settings['ougc_customrep_fontawesome'])) {
+            $imageTemplateName = 'rep_img_fa';
+        }
+
+        $rateTitleText = '';
+
+        $lang_val = &$rateTitleText;
+
+        $rid = &$rateID;
+
+        $image = &$rateImage;
+
+        $can_vote = is_member($reputation['groups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
+
+        if ($voted && $voted_this) {
+            $can_vote = false;
+
+            if (!empty($mybb->settings['ougc_customrep_delete']) && $reputation['allowdeletion']) {
+                $addDeleteUrl = $ajaxIsEnabled ? $link_delete : $addDeleteUrl . '&amp;delete=1';
+
+                $link = &$addDeleteUrl;
+
+                $rateExtraClass = '_delete';
+
+                $classextra = $rateExtraClass;
+
+                $rateTitleText = $lang->sprintf($lang->ougc_customrep_delete, $rateName);
+
+                $rateImage = eval(getTemplate($imageTemplateName, false));
+
+                $rateImage = eval(getTemplate('rep_voted', false));
+            } else {
+                $rateTitleText = $lang->sprintf($lang->ougc_customrep_voted, $rateName);
+
+                $rateImage = eval(getTemplate($imageTemplateName, false));
+            }
+        } elseif ($can_vote && ($reputation['inmultiple'] || !(isset($unique_rids[$rateID]) && array_intersect(
+                        $unique_rids,
+                        $voted_rids
+                    )))) {
+            $link = &$addDeleteUrl;
+
+            $classextra = $rateExtraClass;
+
+            $rateTitleText = $lang->sprintf($lang->ougc_customrep_vote, $rateName);
+
+            $rateImage = eval(getTemplate($imageTemplateName, false));
+
+            $rateImage = eval(getTemplate('rep_voted', false));
+        } else {
+            $rateTitleText = $rateName;
+
+            $rateImage = eval(getTemplate($imageTemplateName, false));
+        }
+        /*
+        {
+            $rateTitleText = $lang->ougc_customrep_voted_undo;
+            $rateImage = eval(getTemplate($imageTemplateName, false));
+        }
+        */
+
+        $rateCode = eval(getTemplate('rep', false));
+
+        if (!empty($reputation['customvariable']) || $setRateID && $setRateID === (int)$rateID) {
+            $postThreadObject['customrep_' . $rateID] = $rateCode;
+            /*if($setRateID)
+            {
+                break;
+            }*/
+        }
+
+        if (empty($reputation['customvariable'])) {
+            $ratesListCode .= $rateCode;
+        }
+    }
+    unset($rateID, $reputation);
+
+    /*if($setRateID)
+    {
+        return false;
+    }*/
+
+    $ratesListCode = trim($ratesListCode);
+
+    $reputations = &$ratesListCode;
+
+    $postThreadObject['customrep'] = eval(getTemplate());
+
+    return true;
+}
+
+function ajaxError(string $error): bool
+{
+    outputAjaxData([
+        'errors' => $error
+    ]);
+
+    return true;
+}
+
+function outputAjaxData(array $data)
+{
+    global $lang;
+
+    header("Content-type: application/json; charset={$lang->settings['charset']}");
+
+    echo json_encode($data);
+
+    exit;
 }

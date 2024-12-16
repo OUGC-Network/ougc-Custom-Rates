@@ -41,6 +41,8 @@ use function ougc\CustomReputation\Core\getSetting;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\rateInsert;
 
+use function ougc\CustomReputation\Core\urlHandlerBuild;
+
 use const ougc\CustomReputation\ROOT;
 use const PLUGINLIBRARY;
 
@@ -608,4 +610,15 @@ function loadPluginLibrary(): bool
     }
 
     return true;
+}
+
+function admin_redirect(string $redirectMessage = '', bool $isError = false)
+{
+    if ($redirectMessage) {
+        flash_message($redirectMessage, ($isError ? 'error' : 'success'));
+    }
+
+    admin_redirect(urlHandlerBuild());
+
+    exit;
 }

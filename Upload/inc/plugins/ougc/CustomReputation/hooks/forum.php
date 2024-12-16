@@ -50,6 +50,8 @@ use function ougc\CustomReputation\Core\logUpdate;
 use function ougc\CustomReputation\Core\modalRender;
 use function ougc\CustomReputation\Core\modalRenderError;
 use function ougc\CustomReputation\Core\newPointsIsInstalled;
+use function ougc\CustomReputation\Core\outputAjaxData;
+use function ougc\CustomReputation\Core\postRatesParse;
 use function ougc\CustomReputation\Core\rateGet;
 use function ougc\CustomReputation\Core\rateGetImage;
 use function ougc\CustomReputation\Core\rateGetName;
@@ -345,7 +347,7 @@ function forumdisplay_thread_end(): bool
 
     urlHandlerSet(get_thread_link($thread['tid']));
 
-    ougc_customrep_parse_postbit($thread, (int)$thread['firstpost']);
+    postRatesParse($thread, (int)$thread['firstpost']);
 
     return true;
 }
@@ -441,7 +443,7 @@ function portal_announcement(): bool
 
     urlHandlerSet(get_thread_link($announcement['tid']));
 
-    ougc_customrep_parse_postbit($announcement, (int)$announcement['firstpost']);
+    postRatesParse($announcement, (int)$announcement['firstpost']);
 
     return true;
 }
@@ -520,7 +522,7 @@ function showthread_start09()
     if ($mybb->get_input('action') == 'customReputationPopUp') {
         $errorFunction = '\ougc\CustomReputation\Core\modalRenderError';
     } elseif ($ajaxIsEnabled) {
-        $errorFunction = 'ougc_customrep_ajax_error';
+        $errorFunction = '\ougc\CustomReputation\Core\ajaxError';
     }
 
     $rateID = $mybb->get_input('rid', MyBB::INPUT_INT);
@@ -881,11 +883,11 @@ function showthread_start09()
         'content' => ''
     ];
 
-    ougc_customrep_parse_postbit($post, $postID, $rateID);
+    postRatesParse($post, $postID, $rateID);
 
     $userReputation = &$post['userreputation'];
 
-    ougc_customrep_ajax([
+    outputAjaxData([
         'success' => 1,
         'pid' => $postID,
         'rid' => $rateID,
@@ -895,9 +897,125 @@ function showthread_start09()
     ]);
 }
 
-function postbit(array &$postData): array
+function postbit(array &$post): array
 {
-    return $postData;
+    global $mybb;
+    global $fid, $tid, $templates, $thread;
+
+    $postID = (int)$post['pid'];
+
+    $firstPostID = (int)$thread['firstpost'];
+
+    if (!empty($mybb->settings['ougc_customrep_firstpost']) && $postID !== $firstPostID) {
+        return $post;
+    }
+
+    if (!empty($mybb->settings['ougc_customrep_firstpost'])) {
+        return $post;
+    }
+
+    static $ignoreRules = [];
+
+    global $customReputationCacheQuery;
+
+    $forumID = (int)$fid;
+
+    if (!isAllowedForum($forumID)) {
+        return $post;
+    }
+
+    if (!isset($customReputationCacheQuery)) {
+        $customReputationCacheQuery = [];
+
+        global $mybb;
+        global $footer;
+
+        $fontAwesomeCode = '';
+
+        if ($mybb->settings['ougc_customrep_fontawesome']) {
+            $fontAwesomeCode .= eval(getTemplate('headerinclude_fa'));
+        }
+
+        $font_awesome = &$fontAwesomeCode;
+
+        $customThreadFieldsVariables = '';
+
+        if (!empty($mybb->settings['ougc_customrep_xthreads_hide'])) {
+            foreach (
+                explode(
+                    ',',
+                    str_replace('_require', '', $mybb->settings['ougc_customrep_xthreads_hide'])
+                ) as $customThreadFieldKey
+            ) {
+                $xt_field = &$customThreadFieldKey;
+
+                $customThreadFieldsVariables .= eval(getTemplate('headerinclude_xthreads', false));
+            }
+        }
+
+        $xthreads_variables = &$customThreadFieldsVariables;
+
+        $footer .= eval(getTemplate('headerinclude'));
+
+        global $db, $thread;
+
+        $forumsRateCache = forumGetRates($forumID);
+
+        $ratesIDs = implode("','", array_keys($forumsRateCache));
+
+        $whereClauses = ["rid IN ('{$ratesIDs}')"];
+
+        if (!empty($mybb->settings['ougc_customrep_firstpost'])) {
+            $whereClauses[] = "pid='{$firstPostID}'";
+        } // Bug: http://mybbhacks.zingaburga.com/showthread.php?tid=1587&pid=12762#pid12762
+        elseif ($mybb->get_input('mode') == 'threaded') {
+            $whereClauses[] = "pid='{$mybb->get_input('pid', 1)}'";
+        } elseif (isset($GLOBALS['pids'])) {
+            $whereClauses[] = $GLOBALS['pids'];
+        } else {
+            $whereClauses[] = "pid='{$postID}'";
+        }
+
+        $query = $db->simple_select(
+            'ougc_customrep_log',
+            'rid, pid, lid, uid',
+            (implode(' AND ', $whereClauses))
+        );
+
+        while ($logData = $db->fetch_array($query)) {
+            // > The ougc_customrep_log table seems to mostly query on the rid,pid columns - there really should be indexes on these; one would presume that pid,uid should be a unique key as you can't vote for more than once for each post.  The good thing about identifying these uniques is that it could help one simplify something like
+            $customReputationCacheQuery[$logData['rid']][$logData['pid']][$logData['lid']][$logData['uid']] = 1; //TODO
+            // > where the 'lid' key seems to be unnecessary
+        }
+
+        foreach ($forumsRateCache as $rateID => $rateData) {
+            if ((int)$rateData['ignorepoints'] && isset($customReputationCacheQuery[$rateID])) {
+                $ignoreRules[$rateID] = (int)$rateData['ignorepoints'];
+            }
+        }
+    }
+
+    if (!empty($ignoreRules)) {
+        foreach ($ignoreRules as $rateID => $ignorePointsThreshold) {
+            if (isset($customReputationCacheQuery[$rateID][$post['pid']]) && count(
+                    $customReputationCacheQuery[$rateID][$post['pid']]
+                ) >= $ignorePointsThreshold) {
+                global $lang, $ignored_message, $ignore_bit, $post_visibility;
+
+                $ignored_message = $lang->sprintf($lang->ougc_customrep_postbit_ignoredbit, $post['username']);
+
+                $post['customrep_ignorebit'] = eval($templates->render('postbit_ignored'));
+
+                $post['customrep_post_visibility'] = 'display: none;';
+
+                break;
+            }
+        }
+    }
+
+    postRatesParse($post, $postID);
+
+    return $post;
 }
 
 function member_profile_end(): bool

@@ -47,13 +47,11 @@ use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
 
 defined('IN_MYBB') || die('Direct initialization of this file is not allowed.');
 
-// Check requirements
-$customrep->meets_requirements() || $customrep->admin_redirect($customrep->message, true);
+global $mybb, $db, $lang;
+global $page;
 
-// Set current url
 urlHandlerSet('index.php?module=config-ougc_customrep');
 
-// Set/load defaults
 loadLanguage();
 
 // Page tabs
@@ -62,11 +60,13 @@ $sub_tabs['ougc_customrep_view'] = [
     'link' => urlHandlerBuild(),
     'description' => $lang->ougc_customrep_tab_view_d
 ];
+
 $sub_tabs['ougc_customrep_add'] = [
     'title' => $lang->ougc_customrep_tab_add,
     'link' => urlHandlerBuild(['action' => 'add']),
     'description' => $lang->ougc_customrep_tab_add_d
 ];
+
 if ($mybb->get_input('action') == 'edit') {
     $sub_tabs['ougc_customrep_edit'] = [
         'title' => $lang->ougc_customrep_tab_edit,
@@ -84,21 +84,81 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     $add = ($mybb->get_input('action') == 'add' ? true : false);
 
     if ($add) {
-        $customrep->set_rep_data();
+        global $db;
+
+        $query = $db->simple_select('ougc_customrep', 'MAX(disporder) as max_disporder');
+        $disporder = (int)$db->fetch_field($query, 'max_disporder');
+
+        $customrep->rep_data = [
+            'name' => '',
+            'image' => '',
+            'groups' => [],
+            'forums' => [],
+            'disporder' => ++$disporder,
+            'visible' => 1,
+            'firstpost' => 1,
+            'allowdeletion' => 1,
+            'customvariable' => 0,
+            'requireattach' => 0,
+            'points' => 0,
+            'ignorepoints' => 0,
+            'inmultiple' => 0,
+            'createCoreReputationType' => 0,
+            'reptype' => '',
+        ];
 
         $page->add_breadcrumb_item($sub_tabs['ougc_customrep_add']['title'], $sub_tabs['ougc_customrep_add']['link']);
         $page->output_header($lang->ougc_customrep_tab_add);
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_add');
     } else {
         if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
-            $customrep->admin_redirect($lang->ougc_customrep_message_invalidrep, true);
+            \ougc\CustomReputation\Core\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
         }
 
-        $customrep->set_rep_data($reputation['rid']);
+        $customrep->rep_data = [
+            'name' => $reputation['name'],
+            'image' => $reputation['image'],
+            'groups' => explode(',', $reputation['groups']),
+            'forums' => explode(',', $reputation['forums']),
+            'disporder' => $reputation['disporder'],
+            'visible' => $reputation['visible'],
+            'firstpost' => $reputation['firstpost'],
+            'allowdeletion' => $reputation['allowdeletion'],
+            'customvariable' => $reputation['customvariable'],
+            'requireattach' => $reputation['requireattach'],
+            'points' => $reputation['points'],
+            'ignorepoints' => $reputation['ignorepoints'],
+            'inmultiple' => $reputation['inmultiple'],
+            'createCoreReputationType' => $reputation['createCoreReputationType'],
+            'reptype' => $reputation['reptype'],
+        ];
 
         $page->add_breadcrumb_item($sub_tabs['ougc_customrep_edit']['title'], $sub_tabs['ougc_customrep_edit']['link']);
         $page->output_header($lang->ougc_customrep_tab_edit);
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_edit');
+    }
+
+    if ($mybb->request_method == 'post') {
+        foreach ($mybb->input as $key => $value) {
+            if (isset($customrep->rep_data[$key])) {
+                $customrep->rep_data[$key] = $value;
+
+                if ($key == 'groups' || $key == 'forums') {
+                    $customrep->rep_data[$key] = implode(
+                        ',',
+                        array_unique(
+                            array_map(
+                                'intval',
+                                !is_array($customrep->rep_data[$key]) ? explode(
+                                    ',',
+                                    $customrep->rep_data[$key]
+                                ) : $customrep->rep_data[$key]
+                            )
+                        )
+                    );
+                }
+            }
+        }
     }
 
     foreach (['groups', 'forums'] as $key) {
@@ -160,10 +220,36 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $forum_checked['custom'] = 'checked="checked"';
     }
 
+    $errors = [];
+
     if ($mybb->request_method == 'post') {
-        if ($customrep->validate_rep_data()) {
+        $name = strlen(trim($mybb->get_input('name')));
+
+        if ($name < 1 || $name > 100) {
+            $errors[] = $lang->ougc_customrep_error_invalidname;
+        }
+
+        $image = strlen(trim($mybb->get_input('image')));
+
+        if ($image < 1 || $image > 255) {
+            $errors[] = $lang->ougc_customrep_error_invalidimage;
+        }
+
+        if ($mybb->get_input('disporder', MyBB::INPUT_INT) < 0) {
+            $errors[] = $lang->ougc_customrep_error_invaliddisporder;
+        }
+
+        if ($mybb->get_input('reptype', MyBB::INPUT_INT) && my_strlen(
+                $mybb->get_input('reptype', MyBB::INPUT_INT)
+            ) > 3) {
+            $errors[] = $lang->ougc_customrep_error_invalidreptype;
+        }
+
+        if (empty($errors)) {
             $customrep->rep_data['groups'] = $mybb->input['groups'];
+
             $customrep->rep_data['forums'] = $mybb->input['forums'];
+
             if ($add) {
                 rateInsert($customrep->rep_data);
 
@@ -176,10 +262,14 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             logAdminAction($mybb->get_input('rid', 1));
 
-            $customrep->admin_redirect($lang->$lang_var);
+            \ougc\CustomReputation\Core\admin_redirect($lang->$lang_var);
         } else {
             $page->output_inline_error($customrep->validate_errors);
         }
+    }
+
+    if (!empty($errors)) {
+        $page->output_inline_error($customrep->validate_errors);
     }
 
     if ($add) {
@@ -346,12 +436,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     $page->output_footer();
 } elseif ($mybb->get_input('action') == 'delete') {
     if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
-        $customrep->admin_redirect($lang->ougc_customrep_message_invalidrep, true);
+        \ougc\CustomReputation\Core\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
     }
 
     if ($mybb->request_method == 'post') {
         if (isset($mybb->input['no']) || $mybb->get_input('my_post_key') != $mybb->post_code) {
-            $customrep->admin_redirect();
+            \ougc\CustomReputation\Core\admin_redirect();
         }
 
         rateDelete($mybb->get_input('rid', 1));
@@ -360,7 +450,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         cacheUpdate();
 
-        $customrep->admin_redirect($lang->ougc_customrep_message_deleterep);
+        \ougc\CustomReputation\Core\admin_redirect($lang->ougc_customrep_message_deleterep);
     }
 
     $page->add_breadcrumb_item($lang->delete);
@@ -419,7 +509,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             cacheUpdate();
 
-            $customrep->admin_redirect();
+            \ougc\CustomReputation\Core\admin_redirect();
         }
 
         $form = new Form(urlHandlerBuild(['action' => 'updatedisporder']), 'post');
