@@ -34,16 +34,30 @@ use MyBB;
 use MybbStuff_MyAlerts_AlertFormatterManager;
 use ougc\CustomReputation\Core\MyAlertsFormatter;
 
+use postParser;
+
+use function Newpoints\Core\points_add_simple;
+use function Newpoints\Core\points_format;
+use function Newpoints\Core\points_substract;
 use function ougc\CustomReputation\Core\alertsIsInstalled;
+use function ougc\CustomReputation\Core\forumGetRates;
 use function ougc\CustomReputation\Core\getTemplate;
+use function ougc\CustomReputation\Core\isAllowedForum;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logDelete;
 use function ougc\CustomReputation\Core\logGet;
 use function ougc\CustomReputation\Core\logInsert;
-
 use function ougc\CustomReputation\Core\logUpdate;
-
+use function ougc\CustomReputation\Core\modalRender;
+use function ougc\CustomReputation\Core\modalRenderError;
+use function ougc\CustomReputation\Core\newPointsIsInstalled;
+use function ougc\CustomReputation\Core\rateGet;
 use function ougc\CustomReputation\Core\rateGetImage;
+
+use function ougc\CustomReputation\Core\rateGetName;
+use function ougc\CustomReputation\Core\urlHandlerBuild;
+
+use function ougc\CustomReputation\Core\urlHandlerSet;
 
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
@@ -255,6 +269,414 @@ function reputation_delete_end(): bool
     return true;
 }
 
+function showthread_start09()
+{
+    global $mybb;
+
+    if (!in_array($mybb->get_input('action'), ['customReputation', 'customReputationPopUp'])) {
+        return;
+    }
+
+    global $templates, $lang;
+    global $tid, $thread, $fid;
+
+    loadLanguage();
+
+    $forumID = (int)$fid;
+
+    $ajaxIsEnabled = !empty($mybb->settings['use_xmlhttprequest']) && !empty($mybb->settings['ougc_customrep_enableajax']);
+
+    urlHandlerSet(get_thread_link($tid)); //TODO
+
+    $templates->cache(
+        'ougccustomrep_misc_row, ougccustomrep_misc_error, ougccustomrep_misc_multipage, ougccustomrep_misc, ougccustomrep_postbit_reputation, ougccustomrep_modal'
+    );
+
+    $errorFunction = 'error';
+
+    if ($mybb->get_input('action') == 'customReputationPopUp') {
+        $errorFunction = '\ougc\CustomReputation\Core\modalRenderError';
+    } elseif ($ajaxIsEnabled) {
+        $errorFunction = 'ougc_customrep_ajax_error';
+    }
+
+    $rateID = $mybb->get_input('rid', MyBB::INPUT_INT);
+
+    if (!($rateData = rateGet($rateID))) {
+        $errorFunction($lang->ougc_customrep_error_invalidrep);
+    }
+
+    $forumRatesCache = forumGetRates($forumID);
+
+    if (empty($rateData['visible']) || !array_key_exists($rateID, $forumRatesCache)) {
+        $errorFunction($lang->ougc_customrep_error_invalidrep);
+    }
+
+    $post = get_post($mybb->get_input('pid', 1));
+
+    $firstPostID = (int)$thread['firstpost'];
+
+    $postID = (int)($post['pid'] ?? 0);
+
+    $postUserID = (int)($post['uid'] ?? 0);
+
+    $postThreadID = (int)($post['uid'] ?? 0);
+
+    $firstPostOnly = !empty($mybb->settings['ougc_customrep_firstpost']) || !empty($rateData['firstpost']);
+
+    $mybb->user['uid'] = (int)$mybb->user['uid'];
+
+    if ($mybb->get_input('action') == 'customReputationPopUp') {
+        if (!$mybb->user['uid'] && empty($mybb->settings['ougc_customrep_guests_popup'])) {
+            modalRenderError($lang->ougc_customrep_error_nopermission_guests);
+        }
+
+        if (!isAllowedForum($forumID)) {
+            modalRenderError($lang->ougc_customrep_error_invalidforum);
+        }
+
+        if (empty($post)) {
+            modalRenderError($lang->ougc_customrep_error_invlidadpost);
+        }
+
+        if ($firstPostOnly && $postID !== $firstPostID) {
+            modalRenderError($lang->ougc_customrep_error_invlidadpost);
+        }
+
+        global $db, $theme, $headerinclude, $parser;
+
+        if (!is_object($parser)) {
+            require_once MYBB_ROOT . 'inc/class_parser.php';
+
+            $parser = new postParser();
+        }
+
+        $ratePopUpUrl = urlHandlerBuild([
+            'pid' => $postID,
+            'my_post_key' => $mybb->post_code,
+            'action' => 'customReputationPopUp',
+            'rid' => $rateID
+        ]);
+
+        $query = $db->simple_select(
+            'ougc_customrep_log',
+            'COUNT(lid) AS totalPostLogs',
+            "pid='{$postID}' AND rid='{$rateID}'"
+        );
+
+        $totalPostLogs = (int)$db->fetch_field($query, 'totalPostLogs');
+
+        $currentPage = $mybb->get_input('page', 1);
+
+        $perPage = (int)$mybb->settings['ougc_customrep_perpage'];
+
+        if ($currentPage > 0) {
+            $startPage = ($currentPage - 1) * $perPage;
+
+            $totalPages = ceil($totalPostLogs / $perPage);
+
+            if ($currentPage > $totalPages) {
+                $startPage = 0;
+
+                $currentPage = 1;
+            }
+        } else {
+            $startPage = 0;
+
+            $currentPage = 1;
+        }
+
+        urlHandlerSet(get_post_link($postID, $postThreadID));
+
+        $pagination = multipage(
+            $totalPostLogs,
+            $perPage,
+            $currentPage,
+            "javascript:MyBB.popupWindow('/{$ratePopUpUrl}&amp;page={page}');"
+        );
+
+        $query = $db->simple_select(
+            "ougc_customrep_log r LEFT JOIN {$db->table_prefix}users u ON (u.uid=r.uid)",
+            'r.*, u.username, u.usergroup, u.displaygroup, u.avatar, u.avatartype, u.avatardimensions',
+            "r.pid='{$postID}' AND r.rid='{$rateID}'",
+            ['order_by' => 'r.dateline', 'order_dir' => 'DESC', 'limit' => $perPage, 'limit_start' => $startPage]
+        );
+
+        $modalContent = '';
+
+        $trow = alt_trow(true);
+
+        while ($logData = $db->fetch_array($query)) {
+            $profileLinkFormatted = build_profile_link(
+                format_name(
+                    htmlspecialchars_uni($logData['username']),
+                    $logData['usergroup'],
+                    $logData['displaygroup']
+                ),
+                $logData['uid'],
+                '_blank'
+            );
+
+            $logDate = $lang->sprintf(
+                $lang->ougc_customrep_popup_date,
+                my_date($mybb->settings['dateformat'], $logData['dateline']),
+                my_date($mybb->settings['timeformat'], $logData['dateline'])
+            );
+
+            $date = &$logDate;
+
+            $log = ['profilelink_f' => &$profileLinkFormatted];
+
+            $modalContent .= eval(getTemplate('misc_row'));
+
+            $trow = alt_trow();
+        }
+
+        if (!$modalContent) {
+            $errorMessage = $error_message = $lang->ougc_customrep_popup_empty;
+
+            $modalContent = eval(getTemplate('misc_error'));
+        }
+
+        if ($pagination) {
+            $multipage = $pagination;
+
+            $pagination = eval(getTemplate('misc_multipage'));
+        }
+
+        modalRender(
+            $modalContent,
+            $lang->sprintf(
+                $lang->ougc_customrep_popuptitle,
+                htmlspecialchars_uni($rateData['name']),
+                $parser->parse_badwords($post['subject'])
+            ),
+            $lang->sprintf($lang->ougc_customrep_popup_latest, my_number_format($totalPostLogs)),
+            $pagination
+        );
+    }
+
+    if (empty($mybb->user['uid'])) {
+        $errorFunction($lang->ougc_customrep_error_nopermission);
+    }
+
+    verify_post_check($mybb->get_input('my_post_key'));
+
+    if (empty($post)) {
+        $errorFunction($lang->ougc_customrep_error_invlidadpost);
+    }
+
+    if ($mybb->user['uid'] === $postUserID) {
+        $errorFunction($lang->ougc_customrep_error_selftrating);
+    }
+
+    if (!isAllowedForum($forumID)) {
+        $errorFunction($lang->ougc_customrep_error_invalidforum);
+    }
+
+    if (!is_member($rateData['groups'])) {
+        $errorFunction($lang->ougc_customrep_error_nopermission);
+    }
+
+    if ($postThreadID !== (int)$thread['tid'] || $firstPostOnly && $postID !== $firstPostID) {
+        $errorFunction($lang->ougc_customrep_error_invlidadpost);
+    }
+
+    global $db;
+
+    if ($mybb->get_input('delete', 1) == 1) {
+        if (empty($mybb->settings['ougc_customrep_delete'])) {
+            $errorFunction($lang->ougc_customrep_error_nopermission);
+        }
+
+        if (!$rateData['allowdeletion']) {
+            $errorFunction($lang->ougc_customrep_error_nopermission_rate);
+        }
+
+        $query = $db->simple_select(
+            'ougc_customrep_log',
+            'points, uid, lid',
+            "pid='{$postID}' AND uid='{$mybb->user['uid']}' AND rid='{$rateID}'"
+        );
+
+        if (!$db->num_rows($query)) {
+            $errorFunction($lang->ougc_customrep_error_invalidrating);
+        }
+
+        while ($logData = $db->fetch_array($query)) {
+            $logPoints = (float)$logData['points'];
+
+            if (newPointsIsInstalled() && !empty($logPoints)) {
+                $postUserData = get_user($postUserID);
+
+                if ($logPoints > $postUserData['newpoints']) {
+                    $errorFunction(
+                        $lang->sprintf(
+                            $lang->ougc_customrep_error_points_author,
+                            htmlspecialchars_uni($postUserData['username']),
+                            points_format($logPoints)
+                        )
+                    );
+                }
+
+                points_substract($postUserID, $logPoints);
+
+                points_add_simple((int)$logData['uid'], $logPoints);
+            }
+
+            logDelete((int)$logData['lid']);
+        }
+    } else {
+        if (!empty($mybb->settings['ougc_customrep_multiple'])) {
+            if (!empty($rateData['inmultiple'])) {
+                $query = $db->simple_select(
+                    'ougc_customrep_log',
+                    'rid',
+                    "pid='{$postID}' AND uid='{$mybb->user['uid']}' AND rid='{$rateID}'",
+                    ['limit' => 1]
+                );
+
+                $userAlreadyRated = (bool)$db->fetch_field($query, 'rid');
+
+                if ($userAlreadyRated) {
+                    $errorFunction($lang->ougc_customrep_error_multiple);
+                }
+            } else {
+                $rateIDs = [];
+
+                foreach ($forumRatesCache as $_rateID => $_rateData) {
+                    if (empty($_rateData['inmultiple'])) {
+                        $rateIDs[(int)$_rateID] = (int)$_rateID;
+                    }
+                }
+
+                $rateIDs = implode("','", $rateIDs);
+
+                $query = $db->simple_select(
+                    'ougc_customrep_log',
+                    'lid',
+                    "pid='{$postID}' AND uid='{$mybb->user['uid']}' AND rid IN ('{$rateIDs}')",
+                    ['limit' => 1]
+                );
+
+                $userAlreadyRated = (bool)$db->fetch_field($query, 'lid');
+
+                if ($userAlreadyRated) {
+                    $errorFunction($lang->ougc_customrep_error_multiple_single);
+                }
+            }
+
+            $query = $db->simple_select(
+                'ougc_customrep_log',
+                'rid',
+                "pid='{$postID}' AND uid='{$mybb->user['uid']}' AND rid='{$rateID}'",
+                ['limit' => 1]
+            );
+
+            $userAlreadyRated = (bool)$db->fetch_field($query, 'rid');
+        } else {
+            $query = $db->simple_select(
+                'ougc_customrep_log',
+                'lid',
+                "pid='{$postID}' AND uid='{$mybb->user['uid']}'",
+                ['limit' => 1]
+            );
+
+            $userAlreadyRated = (bool)$db->fetch_field($query, 'lid');
+        }
+
+        if ($userAlreadyRated) {
+            $errorFunction($lang->ougc_customrep_error_multiple);
+        }
+
+        $rateData['points'] = (float)$rateData['points'];
+
+        $points = 0;
+
+        if (newPointsIsInstalled() && $rateData['points']) {
+            if (!($forumrules = newpoints_getrules('forum', $thread['fid']))) {
+                $forumrules['rate'] = 1;
+            }
+
+            if (!($grouprules = newpoints_getrules('group', $mybb->user['usergroup']))) {
+                $grouprules['rate'] = 1;
+            }
+
+            if ($forumrules['rate'] && $grouprules['rate']) {
+                $points = round(
+                    $rateData['points'] * $forumrules['rate'] * $grouprules['rate'],
+                    (int)$mybb->settings['newpoints_main_decimal']
+                );
+
+                if ($points > $mybb->user['newpoints']) {
+                    $errorFunction($lang->sprintf($lang->ougc_customrep_error_points, points_format($points)));
+                } else {
+                    points_add_simple($postUserID, $points);
+
+                    points_substract((int)$mybb->user['uid'], $points);
+                }
+            }
+        }
+
+        $insertData = [
+            'pid' => $postID,
+            'rid' => $rateID,
+            'points' => $points
+        ];
+
+        logInsert($insertData, (int)$rateData['reptype']);
+    }
+
+    if (!$ajaxIsEnabled) {
+        $mybb->settings['redirects'] = $mybb->user['showredirect'] = 0;
+
+        redirect(get_post_link($postID, $postThreadID) . '#' . $postThreadID);
+
+        exit;
+    }
+
+    // > On postbit, the plugin loads ALL votes, and does a summation + check for current user voting on this.  This can potentially be problematic if there happens to be a large number of votes.
+    $query = $db->simple_select(
+        'ougc_customrep_log',
+        'lid, rid, pid, uid',
+        "pid='{$postID}'"
+    ); //  AND rid='{$rateID}'
+
+    global $customReputationCacheQuery;
+
+    is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
+
+    while ($logData = $db->fetch_array($query)) {
+        $customReputationCacheQuery[$logData['rid']][$logData['pid']][$logData['lid']][$logData['uid']] = 1;
+    }
+
+    $query = $db->simple_select('users', 'reputation', "uid='{$postUserID}'");
+
+    $post = [
+        'pid' => $postID,
+        'userreputation' => get_reputation((int)$db->fetch_field($query, 'reputation'), $postUserID),
+        'content' => ''
+    ];
+
+    ougc_customrep_parse_postbit($post, $rateID);
+
+    $userReputation = &$post['userreputation'];
+
+    ougc_customrep_ajax([
+        'success' => 1,
+        'pid' => $postID,
+        'rid' => $rateID,
+        'content' => $post['customrep'],
+        'content_rep' => $post['customrep_' . $rateData['rid']],
+        'userreputation' => eval(getTemplate('postbit_reputation')),
+    ]);
+}
+
+function postbit(array &$postData): array
+{
+    return $postData;
+}
+
 function member_profile_end(): bool
 {
     global $db, $mybb, $memprofile, $lang, $theme, $footer;
@@ -353,7 +775,7 @@ function member_profile_end(): bool
                 continue;
             }
 
-            $rateName = $rateTitleText = $lang_val = htmlspecialchars_uni($rateData['name']);
+            $rateName = $rateTitleText = $lang_val = htmlspecialchars_uni(rateGetName($rateID) ?? $rateData['name']);
 
             $totalReceivedRates = $number = my_number_format($buildParams['statsCache'][$rateID]);
 

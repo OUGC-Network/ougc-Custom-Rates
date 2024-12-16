@@ -45,10 +45,10 @@ use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
 
-defined('IN_MYBB') or die('Direct initialization of this file is not allowed.');
+defined('IN_MYBB') || die('Direct initialization of this file is not allowed.');
 
 // Check requirements
-$customrep->meets_requirements() or $customrep->admin_redirect($customrep->message, true);
+$customrep->meets_requirements() || $customrep->admin_redirect($customrep->message, true);
 
 // Set current url
 urlHandlerSet('index.php?module=config-ougc_customrep');

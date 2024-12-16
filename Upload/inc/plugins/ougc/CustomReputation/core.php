@@ -119,7 +119,7 @@ function urlHandlerBuild(array $urlAppend = [], bool $fetchImportUrl = false, bo
     global $PL;
 
     if (!is_object($PL)) {
-        $PL or require_once PLUGINLIBRARY;
+        $PL || require_once PLUGINLIBRARY;
     }
 
     if ($fetchImportUrl === false) {
@@ -597,6 +597,11 @@ function logAdminAction(int $rateID = 0)
     }
 }
 
+function newPointsIsInstalled(): bool
+{
+    return function_exists('newpoints_addpoints');
+}
+
 function alertsIsInstalled(): bool
 {
     return function_exists('myalerts_create_instances') && class_exists('MybbStuff_MyAlerts_AlertFormatterManager');
@@ -661,4 +666,88 @@ function alertDelete(int $userID, int $fromUserID, int $objectID): bool
     }
 
     return true;
+}
+
+function modalRender(
+    string $modalContents = '',
+    string $modalTitle = '',
+    string $modalDescription = '',
+    string $pagination = ''
+) {
+    global $theme;
+
+    loadLanguage();
+
+    $content = $modalContents;
+
+    $title = $modalTitle;
+
+    $desc = $modalDescription;
+
+    $multipage = $pagination;
+
+    $modalContents = $page = eval(getTemplate('misc', false));
+
+    echo eval(getTemplate('modal', false));
+
+    exit;
+}
+
+function modalRenderError(string $errorMessage = '', string $modalTitle = ''): bool
+{
+    global $lang;
+
+    loadLanguage();
+
+    if (!$modalTitle) {
+        $modalTitle = $lang->ougc_customrep_error;
+    }
+
+    $error_message = &$errorMessage;
+
+    modalRender(eval(getTemplate('misc_error')), $modalTitle);
+
+    return true;
+}
+
+function isAllowedForum(int $forumID): bool
+{
+    static $forumsCache = [];
+
+    if (!isset($forumsCache[$forumID])) {
+        global $cache;
+
+        $ratesCache = (array)$cache->read('ougc_customrep');
+
+        foreach ($ratesCache as $rateID => &$rateData) {
+            if (!is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {
+                unset($ratesCache[$rateID]);
+            }
+        }
+
+        $forumsCache[$forumID] = (bool)$ratesCache;
+    }
+
+    return $forumsCache[$forumID];
+}
+
+function forumGetRates(int $forumID): array
+{
+    static $forumsCache = [];
+
+    if (!isset($forumsCache[$forumID])) {
+        global $cache;
+
+        $forumsCache[$forumID] = [];
+
+        $ratesCache = (array)$cache->read('ougc_customrep');
+
+        foreach ($ratesCache as $rateID => $rateData) {
+            if (is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {
+                $forumsCache[$forumID][(int)$rateID] = $rateData;
+            }
+        }
+    }
+
+    return $forumsCache[$forumID];
 }
