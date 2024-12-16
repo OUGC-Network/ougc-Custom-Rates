@@ -27,6 +27,14 @@
  ****************************************************************************/
 
 // Die if IN_MYBB is not defined, for security reasons.
+use function ougc\CustomReputation\Core\logAdminAction;
+use function ougc\CustomReputation\Core\rateDelete;
+use function ougc\CustomReputation\Core\rateGet;
+use function ougc\CustomReputation\Core\rateImageGet;
+
+use function ougc\CustomReputation\Core\rateInsert;
+use function ougc\CustomReputation\Core\rateUpdate;
+
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
@@ -73,7 +81,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $page->output_header($lang->ougc_customrep_tab_add);
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_add');
     } else {
-        if (!($reputation = $customrep->get_rep($mybb->get_input('rid', 1)))) {
+        if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
             $customrep->admin_redirect($lang->ougc_customrep_message_invalidrep, true);
         }
 
@@ -138,13 +146,17 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             $customrep->rep_data['groups'] = $mybb->input['groups'];
             $customrep->rep_data['forums'] = $mybb->input['forums'];
             if ($add) {
-                $customrep->insert_rep($customrep->rep_data);
+                rateInsert($customrep->rep_data);
+
                 $lang_var = 'ougc_customrep_message_addrep';
             } else {
-                $customrep->update_rep($customrep->rep_data, $reputation['rid']);
+                rateUpdate($customrep->rep_data, (int)$reputation['rid']);
+
                 $lang_var = 'ougc_customrep_message_editrep';
             }
-            $customrep->log_action();
+
+            logAdminAction($mybb->get_input('rid', 1));
+
             $customrep->admin_redirect($lang->$lang_var, !$customrep->update_cache());
         } else {
             $page->output_inline_error($customrep->validate_errors);
@@ -314,7 +326,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
     $page->output_footer();
 } elseif ($mybb->get_input('action') == 'delete') {
-    if (!($reputation = $customrep->get_rep($mybb->get_input('rid', 1)))) {
+    if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
         $customrep->admin_redirect($lang->ougc_customrep_message_invalidrep, true);
     }
 
@@ -323,8 +335,10 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             $customrep->admin_redirect();
         }
 
-        $customrep->delete_rep($mybb->get_input('rid', 1));
-        $customrep->log_action();
+        rateDelete($mybb->get_input('rid', 1));
+
+        logAdminAction($mybb->get_input('rid', 1));
+
         $customrep->update_cache();
         $customrep->admin_redirect($lang->ougc_customrep_message_deleterep);
     }
@@ -380,7 +394,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         if ($mybb->request_method == 'post' && $mybb->get_input('action') == 'updatedisporder') {
             foreach ($mybb->input['disporder'] as $rid => $disporder) {
-                $customrep->update_rep(['disporder' => $disporder], $rid);
+                rateUpdate(['disporder' => $disporder], (int)$rid);
             }
             $customrep->update_cache();
             $customrep->admin_redirect();
@@ -392,7 +406,10 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             if ($mybb->settings['ougc_customrep_fontawesome']) {
                 $image = '<i class="' . $reputation['image'] . '" aria-hidden="true"></i>';
             } else {
-                $image = '<img src="' . $customrep->get_image($reputation['image'], $reputation['rid']) . '" />';
+                $image = '<img src="' . rateImageGet(
+                        $reputation['image'],
+                        (int)$reputation['rid']
+                    ) . '" />';
             }
 
             $link = $customrep->build_url(['action' => 'edit', 'rid' => $reputation['rid']]);

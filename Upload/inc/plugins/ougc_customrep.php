@@ -34,6 +34,9 @@ use function ougc\CustomReputation\Core\logDelete;
 use function ougc\CustomReputation\Core\logGet;
 use function ougc\CustomReputation\Core\logInsert;
 use function ougc\CustomReputation\Core\logUpdate;
+use function ougc\CustomReputation\Core\rateGet;
+use function ougc\CustomReputation\Core\rateImageGet;
+use function ougc\CustomReputation\Core\rateInsert;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
@@ -71,40 +74,37 @@ addHooks('ougc\CustomReputation\Hooks\Shared');
 global $plugins;
 
 // Add our hooks
-if (defined('IN_ADMINCP')) {
-} else {
-    if (defined('THIS_SCRIPT')) {
-        switch (THIS_SCRIPT) {
-            case 'forumdisplay.php':
-            case 'portal.php':
-            case 'reputation.php':
-            case 'showthread.php':
-            case 'editpost.php':
-            case 'member.php':
-            case 'attachment.php':
-                $plugins->add_hook('forumdisplay_thread', 'ougc_customrep_forumdisplay_thread');
+if (!defined('IN_ADMINCP') && defined('THIS_SCRIPT')) {
+    switch (THIS_SCRIPT) {
+        case 'forumdisplay.php':
+        case 'portal.php':
+        case 'reputation.php':
+        case 'showthread.php':
+        case 'editpost.php':
+        case 'member.php':
+        case 'attachment.php':
+            $plugins->add_hook('forumdisplay_thread', 'ougc_customrep_forumdisplay_thread');
 
-                $plugins->add_hook('portal_announcement', 'ougc_customrep_portal_announcement');
+            $plugins->add_hook('portal_announcement', 'ougc_customrep_portal_announcement');
 
-                $plugins->add_hook('reputation_start', 'ougc_customrep_delete_reputation');
+            $plugins->add_hook('reputation_start', 'ougc_customrep_delete_reputation');
 
-                $plugins->add_hook('showthread_start', 'ougc_customrep_request', -1);
-                $plugins->add_hook('postbit', 'ougc_customrep_postbit');
+            $plugins->add_hook('showthread_start', 'ougc_customrep_request', -1);
+            $plugins->add_hook('postbit', 'ougc_customrep_postbit');
 
-                $plugins->add_hook('member_profile_end', 'ougc_customrep_member_profile_end');
+            $plugins->add_hook('member_profile_end', 'ougc_customrep_member_profile_end');
 
-                $plugins->add_hook('editpost_end', 'ougc_customrep_editpost_end');
+            $plugins->add_hook('editpost_end', 'ougc_customrep_editpost_end');
 
-                $plugins->add_hook('attachment_start', 'ougc_customrep_attachment_start');
+            $plugins->add_hook('attachment_start', 'ougc_customrep_attachment_start');
 
-                // Moderation
-                $plugins->add_hook('class_moderation_delete_thread_start', 'ougc_customrep_delete_thread');
-                $plugins->add_hook('class_moderation_delete_post_start', 'ougc_customrep_delete_post');
-                $plugins->add_hook('class_moderation_merge_posts', 'ougc_customrep_merge_posts');
-                #$plugins->add_hook('class_moderation_merge_threads', 'ougc_customrep_merge_threads'); // seems like posts are updated instead of "re-created", good, less work
-                #$plugins->add_hook('class_moderation_split_posts', 'ougc_customrep_merge_threads'); // no sure what happens here
-                break;
-        }
+            // Moderation
+            $plugins->add_hook('class_moderation_delete_thread_start', 'ougc_customrep_delete_thread');
+            $plugins->add_hook('class_moderation_delete_post_start', 'ougc_customrep_delete_post');
+            $plugins->add_hook('class_moderation_merge_posts', 'ougc_customrep_merge_posts');
+            #$plugins->add_hook('class_moderation_merge_threads', 'ougc_customrep_merge_threads'); // seems like posts are updated instead of "re-created", good, less work
+            #$plugins->add_hook('class_moderation_split_posts', 'ougc_customrep_merge_threads'); // no sure what happens here
+            break;
     }
 }
 
@@ -619,8 +619,7 @@ function ougc_customrep_install()
     $customrep->_db_verify_columns();
     $customrep->_db_verify_indexes();
 
-    // Add a default reputation type
-    $customrep->insert_rep([
+    rateInsert([
         'name' => 'Like',
         'image' => '{bburl}/images/ougc_customrep/default.png',
         'groups' => -1,
@@ -1198,7 +1197,7 @@ function ougc_customrep_member_profile_end()
         $number = my_number_format($stats_received[$rid]);
         eval('$number = "' . $templates->get('ougccustomrep_profile_number') . '";');
 
-        $reputation['image'] = $customrep->get_image($reputation['image'], $rid);
+        $reputation['image'] = rateImageGet($reputation['image'], (int)$rid);
 
         eval('$image = "' . $templates->get($tmplt_img, 1, 0) . '";');
 
@@ -1225,7 +1224,7 @@ function ougc_customrep_member_profile_end()
         $number = my_number_format($stats_given[$rid]);
         eval('$number = "' . $templates->get('ougccustomrep_profile_number') . '";');
 
-        $reputation['image'] = $customrep->get_image($reputation['image'], $rid);
+        $reputation['image'] = rateImageGet($reputation['image'], (int)$rid);
 
         eval('$image = "' . $templates->get($tmplt_img, 1, 0) . '";');
 
@@ -1537,7 +1536,7 @@ function ougc_customrep_request()
 
     $rid = $mybb->get_input('rid', MyBB::INPUT_INT);
 
-    if (!($reputation = $customrep->get_rep($rid))) {
+    if (!($reputation = rateGet((int)$rid))) {
         $error($lang->ougc_customrep_error_invalidrep);
     }
 
@@ -1690,7 +1689,7 @@ function ougc_customrep_request()
         $error($lang->ougc_customrep_error_invalidforum);
     }
 
-    if ($reputation['groups'] == '' || ($reputation['groups'] != -1 && !$customrep->is_member($reputation['groups']))) {
+    if ($reputation['groups'] == '' || ($reputation['groups'] != -1 && !is_member($reputation['groups']))) {
         $error($lang->ougc_customrep_error_nopermission);
     }
 
@@ -2279,65 +2278,6 @@ class OUGC_CustomRep
         return urlHandlerBuild($urlappend, $fetch_input_url);
     }
 
-    // Fetch current url inputs, for multipage mostly
-    public function fetch_input_url($ignore = false)
-    {
-        $location = parse_url(get_current_location());
-        while (my_strpos($location['query'], '&amp;')) {
-            $location['query'] = html_entity_decode($location['query']);
-        }
-        $location = explode('&', $location['query']);
-
-        if ($ignore !== false) {
-            if (!is_array($ignore)) {
-                $ignore = [$ignore];
-            }
-            foreach ($location as $key => $input) {
-                $input = explode('=', $input);
-                if (in_array($input[0], $ignore)) {
-                    unset($location[$key]);
-                }
-            }
-        }
-
-        $url = [];
-        foreach ($location as $input) {
-            $input = explode('=', $input);
-            $url[$input[0]] = $input[1];
-        }
-
-        return $url;
-    }
-
-    // Get the reputation icon
-    public function get_image($image, $rid)
-    {
-        if (!isset($this->cache['images'][$rid])) {
-            global $settings, $theme;
-            $this->cache['images'][$rid] = false;
-
-            $replaces = [
-                '{bburl}' => $settings['bburl'],
-                '{homeurl}' => $settings['homeurl'],
-                '{imgdir}' => $theme['imgdir']
-            ];
-
-            $this->cache['images'][$rid] = str_replace(array_keys($replaces), array_values($replaces), $image);
-        }
-
-        return $this->cache['images'][$rid];
-    }
-
-    // Log admin action
-    public function log_action()
-    {
-        if ($this->rid) {
-            log_admin_action($this->rid);
-        } else {
-            log_admin_action();
-        }
-    }
-
     // Update the cache
     public function update_cache()
     {
@@ -2391,108 +2331,10 @@ class OUGC_CustomRep
         return $array;
     }
 
-    // Insert a new custom reputation to the DB
-    public function insert_rep($data = [], $update = false, $rid = 0)
-    {
-        global $db;
-
-        $insert_data = [];
-
-        if (isset($data['name'])) {
-            $insert_data['name'] = $db->escape_string($data['name']);
-        }
-
-        if (isset($data['image'])) {
-            $insert_data['image'] = $db->escape_string($data['image']);
-        }
-
-        if (isset($data['groups'])) {
-            if (is_array($data['groups'])) {
-                $data['groups'] = $this->clean_array($data['groups']);
-            }
-
-            $insert_data['groups'] = $db->escape_string($data['groups']);
-        }
-
-        if (isset($data['forums'])) {
-            if (is_array($data['forums'])) {
-                $data['forums'] = $this->clean_array($data['forums']);
-            }
-
-            $insert_data['forums'] = $db->escape_string($data['forums']);
-        }
-
-        if (isset($data['disporder'])) {
-            $insert_data['disporder'] = (int)$data['disporder'];
-        }
-
-        if (isset($data['visible'])) {
-            $insert_data['visible'] = (int)$data['visible'];
-        }
-
-        if (isset($data['firstpost'])) {
-            $insert_data['firstpost'] = (int)$data['firstpost'];
-        }
-
-        if (isset($data['allowdeletion'])) {
-            $insert_data['allowdeletion'] = (int)$data['allowdeletion'];
-        }
-
-        if (isset($data['customvariable'])) {
-            $insert_data['customvariable'] = (int)$data['customvariable'];
-        }
-
-        if (isset($data['requireattach'])) {
-            $insert_data['requireattach'] = (int)$data['requireattach'];
-        }
-
-        if (isset($data['points'])) {
-            $insert_data['points'] = (int)$data['points'];
-        }
-
-        if (isset($data['ignorepoints'])) {
-            $insert_data['ignorepoints'] = (int)$data['ignorepoints'];
-        }
-
-        if (isset($data['inmultiple'])) {
-            $insert_data['inmultiple'] = (int)$data['inmultiple'];
-        }
-
-        if (isset($data['createCoreReputationType'])) {
-            $insert_data['createCoreReputationType'] = (int)$data['createCoreReputationType'];
-        }
-
-        $insert_data['reptype'] = '';
-        if ($data['reptype'] != '') {
-            $insert_data['reptype'] = (int)$data['reptype'];
-        }
-
-        if ($insert_data) {
-            global $plugins;
-
-            if ($update) {
-                $this->rid = (int)$rid;
-                $db->update_query('ougc_customrep', $insert_data, 'rid=\'' . $this->rid . '\'');
-
-                $plugins->run_hooks('ouc_customrep_update_rep', $this);
-            } else {
-                $this->rid = (int)$db->insert_query('ougc_customrep', $insert_data);
-
-                $plugins->run_hooks('ouc_customrep_insert_rep', $this);
-            }
-        }
-    }
-
-    // Update espesific custom reputation
-    public function update_rep($data = [], $rid = 0)
-    {
-        $this->insert_rep($data, true, $rid);
-    }
-
     // Set reputation data
     public function set_rep_data($rid = null)
     {
-        if (isset($rid) && ($reputation = $this->get_rep($rid))) {
+        if (isset($rid) && ($reputation = rateGet((int)$rid))) {
             $this->rep_data = [
                 'name' => $reputation['name'],
                 'image' => $reputation['image'],
@@ -2583,26 +2425,6 @@ class OUGC_CustomRep
         return $valid;
     }
 
-    // Get a custom reputation from the DB
-    public function get_rep($rid = 0)
-    {
-        $rid = (int)$rid;
-        if (!isset($this->cache['reps'][$rid])) {
-            $this->cache['reps'][$rid] = false;
-
-            global $db;
-
-            $query = $db->simple_select('ougc_customrep', '*', 'rid=\'' . $rid . '\'');
-            $reputation = $db->fetch_array($query);
-
-            if (isset($reputation['rid'])) {
-                $this->cache['reps'][$rid] = $reputation;
-            }
-        }
-
-        return $this->cache['reps'][$rid];
-    }
-
     // Ge espesific forum to affect
     public function set_forum($fid)
     {
@@ -2627,7 +2449,7 @@ class OUGC_CustomRep
             }
 
             $rep['name'] = htmlspecialchars_uni($rep['name']);
-            $rep['image'] = $this->get_image($rep['image'], $rid);
+            $rep['image'] = rateImageGet($rep['image'], (int)$rid);
             $rep['groups'] = $this->clean_array($rep['groups']);
 
             $this->cache['_reps'][$rid] = $rep;
@@ -2661,45 +2483,6 @@ class OUGC_CustomRep
         }
 
         return false;
-    }
-
-    // is_member custom method..
-    public function is_member($groups, $empty = true)
-    {
-        if (!$groups && $empty) {
-            return true;
-        }
-
-        global $PL;
-        $PL or require_once PLUGINLIBRARY;
-
-        return (bool)$PL->is_member($groups);
-    }
-
-    // Delete a complete custom reputation and any possible data related to it
-    public function delete_rep($rid)
-    {
-        global $db, $plugins;
-
-        $args = [
-            'this' => &$this,
-            'rid' => $rid,
-            'logs' => []
-        ];
-
-        // Delete all logs.
-        $query = $db->simple_select('ougc_customrep_log', 'lid', 'rid=\'' . (int)$rid . '\'');
-        while ($lid = $db->fetch_field($query, 'lid')) {
-            $args['logs'][$lid] = 1;
-            logDelete((int)$lid);
-        }
-
-        // Now delete this custom reputation.
-        $db->delete_query('ougc_customrep', 'rid=\'' . (int)$rid . '\'');
-
-        $plugins->run_hooks('ouc_customrep_delete_rep', $args);
-
-        return true;
     }
 }
 

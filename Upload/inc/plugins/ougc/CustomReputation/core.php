@@ -180,6 +180,164 @@ function reputationSync(int $userID): bool
     return true;
 }
 
+function rateGet(int $rateID = 0): array
+{
+    global $customReputationCacheRates;
+
+    is_array($customReputationCacheRates) || $customReputationCacheRates = [];
+
+    if (!isset($customReputationCacheRates[$rateID])) {
+        global $db;
+
+        $customReputationCacheRates = [];
+
+        $query = $db->simple_select('ougc_customrep', '*', "rid='{$rateID}'");
+
+        $reputation = $db->fetch_array($query);
+
+        if (isset($reputation['rid'])) {
+            $customReputationCacheRates[$rateID] = $reputation;
+        }
+    }
+
+    return $customReputationCacheRates[$rateID];
+}
+
+function rateInsert(array $rateData = [], bool $isUpdate = false, int $rateID = 0)
+{
+    global $db, $plugins;
+
+    $insertData = [];
+
+    foreach (
+        [
+            'name',
+            'image',
+            'groups',
+            'forums'
+        ] as $columnFieldName
+    ) {
+        if (isset($rateData[$columnFieldName])) {
+            if (is_array($rateData[$columnFieldName])) {
+                $rateData[$columnFieldName] = implode(
+                    ',',
+                    array_unique(array_map('intval', $rateData[$columnFieldName]))
+                );
+            }
+
+            $insertData[$columnFieldName] = $db->escape_string($rateData[$columnFieldName]);
+        }
+    }
+
+    foreach (
+        [
+            'disporder',
+            'visible',
+            'firstpost',
+            'allowdeletion',
+            'customvariable',
+            'requireattach',
+            'ignorepoints',
+            'inmultiple',
+            'createCoreReputationType'
+        ] as $columnFieldName
+    ) {
+        if (isset($rateData[$columnFieldName])) {
+            $insertData[$columnFieldName] = (int)$rateData[$columnFieldName];
+        }
+    }
+
+    if (isset($rateData['points'])) {
+        $insertData['points'] = (float)$rateData['points'];
+    }
+
+    $insertData['reptype'] = REPUTATION_TYPE_NONE;
+
+    if (!empty($rateData['reptype'])) {
+        $insertData['reptype'] = (int)$rateData['reptype'];
+    }
+
+    $hookArguments = [
+        'insertData' => &$insertData
+    ];
+
+    if ($isUpdate) {
+        $hookArguments['rateID'] = $rateID;
+
+        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_update_start', $hookArguments);
+    } else {
+        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_start', $hookArguments);
+    }
+
+    if ($insertData) {
+        if ($isUpdate) {
+            $db->update_query('ougc_customrep', $insertData, "rid='{$rateID}'");
+
+            $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_update_end', $hookArguments);
+        } else {
+            $hookArguments['rateID'] = $rateID = (int)$db->insert_query('ougc_customrep', $insertData);
+
+            $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_end', $hookArguments);
+        }
+    }
+}
+
+function rateUpdate(array $updateData = [], int $rateID = 0)
+{
+    rateInsert($updateData, true, $rateID);
+}
+
+function rateDelete(int $rateID): bool
+{
+    global $db, $plugins;
+
+    $logIDs = [];
+
+    $hookArguments = [
+        'rateID' => $rateID,
+        'logIDs' => &$logIDs
+    ];
+
+    $query = $db->simple_select('ougc_customrep_log', 'lid', "rid='{$rateID}'");
+
+    while ($logID = (int)$db->fetch_field($query, 'lid')) {
+        $logIDs[$logID] = $logID;
+    }
+
+    $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_delete_start', $hookArguments);
+
+    foreach ($logIDs as $logID) {
+        logDelete($logID);
+    }
+
+    $db->delete_query('ougc_customrep', "rid='{$rateID}'");
+
+    return true;
+}
+
+function rateImageGet(string $rateImage, int $rateID): string
+{
+    global $customReputationCacheImages;
+
+    is_array($customReputationCacheImages) || $customReputationCacheImages = [];
+
+    if (!isset($customReputationCacheImages[$rateID])) {
+        global $mybb, $theme;
+
+        $replaces = [
+            '{bburl}' => $mybb->settings['bburl'],
+            '{homeurl}' => $mybb->settings['homeurl'],
+            '{imgdir}' => $theme['imgdir']
+        ];
+
+        $customReputationCacheImages[$rateID] = $mybb->get_asset_url(
+            str_replace(array_keys($replaces), array_values($replaces), $rateImage)
+        );
+    }
+
+    return $customReputationCacheImages[$rateID];
+}
+
 function logGet(int $logID): array
 {
     global $customReputationOCacheLogs;
@@ -261,7 +419,7 @@ function logInsert(
     $hookArguments['logID'] = $logID = (int)$db->insert_query('ougc_customrep_log', $insertData);
 
     if ($reputationValue !== REPUTATION_TYPE_NONE) {
-        $hookArguments['reputationInsertData'] = $reputationInsertData = [
+        $reputationInsertData = [
             'pid' => $insertData['pid'],
             'uid' => $postUserID,
             'adduid' => (int)$mybb->user['uid'],
@@ -270,6 +428,8 @@ function logInsert(
             'lid' => $logID,
             'dateline' => TIME_NOW
         ];
+
+        $hookArguments['reputationInsertData'] = &$reputationInsertData;
 
         $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_reputation', $hookArguments);
 
@@ -375,6 +535,15 @@ function logDelete(int $logID): bool
     return true;
 }
 
+function logAdminAction(int $rateID = 0)
+{
+    if (!empty($rateID)) {
+        log_admin_action($rateID);
+    } else {
+        log_admin_action();
+    }
+}
+
 function alertsIsInstalled(): bool
 {
     return function_exists('myalerts_create_instances') && class_exists('MybbStuff_MyAlerts_AlertFormatterManager');
@@ -429,7 +598,9 @@ function alertDelete(int $userID, int $fromUserID, int $objectID): bool
 
     $alertType = alertsObject()->getByCode('rep');
 
-    if (is_int($alertType) && $alertType->getEnabled()) {
+    if ($alertType != null && $alertType->getEnabled()) {
+        $alertType = (int)$alertType;
+
         $db->delete_query(
             'alerts',
             "uid='{$userID}' AND from_user_id='{$fromUserID}' AND alert_type_id='{$alertType}' AND object_id='{$objectID}'"
