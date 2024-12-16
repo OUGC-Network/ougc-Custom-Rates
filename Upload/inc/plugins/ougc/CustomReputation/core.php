@@ -30,10 +30,10 @@ declare(strict_types=1);
 
 namespace ougc\CustomReputation\Core;
 
+use MybbStuff_MyAlerts_AlertManager;
 use MybbStuff_MyAlerts_AlertTypeManager;
+use MybbStuff_MyAlerts_Entity_Alert;
 
-use const ougc\CustomReputation\Core\SETTINGS;
-use const ougc\CustomReputation\Core\DEBUG;
 use const ougc\CustomReputation\ROOT;
 
 const URL = 'showthread.php';
@@ -296,6 +296,49 @@ function logInsert(
     return $logID;
 }
 
+function logUpdate(int $logID, array $newLogData = []): bool
+{
+    global $db;
+
+    $updateData = [];
+
+    if (isset($newLogData['pid'])) {
+        $updateData['pid'] = (int)$newLogData['pid'];
+    }
+
+    if (isset($newLogData['uid'])) {
+        $updateData['uid'] = (int)$newLogData['uid'];
+    }
+
+    if (isset($newLogData['rid'])) {
+        $updateData['rid'] = (int)$newLogData['rid'];
+    }
+
+    if (isset($newLogData['dateline'])) {
+        $updateData['dateline'] = (int)$newLogData['dateline'];
+    }
+
+    if ($updateData) {
+        $db->update_query('ougc_customrep_log', $updateData, "lid='{$logID}'");
+
+        if (!empty($updateData['pid'])) {
+            $query = $db->simple_select('reputation', 'rid, uid', "lid='{$logID}'");
+
+            while ($reputationData = $db->fetch_array($query)) {
+                $reputationID = (int)$reputationData['rid'];
+
+                $db->update_query('reputation', ['pid' => $updateData['pid']], "rid='{$reputationID}'");
+
+                reputationSync((int)$reputationData['uid']);
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
 function logDelete(int $logID): bool
 {
     global $mybb;
@@ -364,13 +407,13 @@ function alertInsert(int $userID, string $alertType = 'rep', int $objectID = 0, 
     $alertType = alertsObject()->getByCode($alertType);
 
     if ($alertType != null && $alertType->getEnabled()) {
-        $alert = new \MybbStuff_MyAlerts_Entity_Alert($userID, $alertType, $objectID);
+        $alert = new MybbStuff_MyAlerts_Entity_Alert($userID, $alertType, $objectID);
 
         if ($extraDetails) {
             $alert->setExtraDetails($extraDetails);
         }
 
-        \MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
+        MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
     }
 
     return true;

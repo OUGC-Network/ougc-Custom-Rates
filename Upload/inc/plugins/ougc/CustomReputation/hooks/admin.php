@@ -33,6 +33,7 @@ namespace ougc\CustomReputation\Hooks\Admin;
 use MyBB;
 
 use function ougc\CustomReputation\Core\loadLanguage;
+use function ougc\CustomReputation\Core\logUpdate;
 
 function admin_config_plugins_deactivate(): bool
 {
@@ -120,4 +121,69 @@ function admin_config_settings_change(): bool
 
 
     return true;
+}
+
+function admin_user_users_merge_commit(): bool
+{
+    global $db, $destination_user, $source_user;
+
+    $fromUserID = (int)$source_user['uid'];
+
+    $newUserID = (int)$destination_user['uid'];
+
+    $query = $db->simple_select('ougc_customrep_log', 'lid', "uid='{$fromUserID}'");
+
+    while ($logID = (int)$db->fetch_field($query, 'lid')) {
+        logUpdate($logID, ['uid' => $newUserID]);
+    }
+
+    return true;
+}
+
+function admin_formcontainer_output_row(array &$hookArguments): array
+{
+    global $lang, $cache, $form, $mybb;
+
+    loadLanguage();
+
+    if (
+        empty($hookArguments['title']) ||
+        empty($lang->setting_ougc_xthreads_hide) ||
+        $hookArguments['title'] !== $lang->setting_ougc_xthreads_hide
+    ) {
+        return $hookArguments;
+    }
+
+    $customThreadFieldsCache = $cache->read('threadfields');
+
+    if (!function_exists('xthreads_gettfcache') || empty($customThreadFieldsCache)) {
+        $hookArguments['content'] = $lang->setting_ougc_xthreads_information;
+
+        return $hookArguments;
+    }
+
+    $currentItems = $mybb->settings['ougc_customrep_xthreads_hide'];
+
+    if (isset($mybb->input['upsetting']['ougc_customrep_xthreads_hide'])) {
+        $currentItems = $mybb->input['upsetting']['ougc_customrep_xthreads_hide'];
+    }
+
+    $optionItems = $selectedItems = [];
+
+    foreach ($customThreadFieldsCache as $customThreadFieldData) {
+        if (array_intersect([$customThreadFieldData['field']], explode(',', $currentItems))) {
+            $selectedItems[] = $customThreadFieldData['field'];
+        }
+
+        $optionItems[$customThreadFieldData['field']] = $customThreadFieldData['field'];
+    }
+
+    $hookArguments['content'] = $form->generate_select_box(
+        'upsetting[ougc_customrep_xthreads_hide][]',
+        $optionItems,
+        $selectedItems,
+        ['id' => 'row_setting_ougc_customrep_xthreads_hide', 'size' => 5, 'multiple' => true]
+    );
+
+    return $hookArguments;
 }

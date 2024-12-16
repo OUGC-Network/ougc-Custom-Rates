@@ -107,9 +107,6 @@ function reputation_do_add_process(): bool
     }
 
     global $mybb, $db;
-    global $customrep;
-
-    $customrep->set_post($postData);
 
     $userID = (int)$mybb->user['uid'];
 
@@ -159,11 +156,14 @@ function reputation_do_add_process(): bool
 function reputation_do_add_end(): bool
 {
     global $mybb, $db;
-    global $uid;
+    global $uid, $existing_reputation;
     global $customReputationObjects, $existingCustomReputationLogs;
-    global $customrep;
 
     $isExistingReputation = !empty($existing_reputation['uid']);
+
+    if ($isExistingReputation) {
+        //return false;
+    }
 
     $userID = (int)$mybb->user['uid'];
 

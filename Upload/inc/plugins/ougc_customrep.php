@@ -31,12 +31,12 @@ declare(strict_types=1);
 use function ougc\CustomReputation\Core\addHooks;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logDelete;
+use function ougc\CustomReputation\Core\logGet;
 use function ougc\CustomReputation\Core\logInsert;
-use function ougc\CustomReputation\Core\reputationSync;
+use function ougc\CustomReputation\Core\logUpdate;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
-use const ougc\CustomReputation\Core\REPUTATION_TYPE_NONE;
 use const ougc\CustomReputation\ROOT;
 
 // Die if IN_MYBB is not defined, for security reasons.
@@ -72,11 +72,6 @@ global $plugins;
 
 // Add our hooks
 if (defined('IN_ADMINCP')) {
-    // Users merge
-    $plugins->add_hook('admin_user_users_merge_commit', 'ougc_customrep_users_merge');
-
-    // xThreads setting
-    $plugins->add_hook('admin_formcontainer_output_row', 'ougc_customrep_admin_formcontainer_output_row');
 } else {
     if (defined('THIS_SCRIPT')) {
         switch (THIS_SCRIPT) {
@@ -722,62 +717,6 @@ function reload_ougc_customrep(): bool
     return $customrep->update_cache();
 }
 
-//Merging two accounts, update data propertly
-function ougc_customrep_users_merge()
-{
-    global $db, $destination_user, $source_user;
-
-    $fromuid = (int)$source_user['uid'];
-    $touid = (int)$destination_user['uid'];
-
-    // Query all logs that belong to the $fromuid user and update them
-    $query = $db->simple_select('ougc_customrep_log', 'lid', 'uid=\'' . $fromuid . '\'');
-    while ($lid = $db->fetch_field($query, 'lid')) {
-        global $customrep;
-
-        $customrep->update_log($lid, ['uid' => $touid]);
-    }
-}
-
-// Fetch a list of xThreads fields to build the setting
-function ougc_customrep_admin_formcontainer_output_row(&$args)
-{
-    global $lang, $cache, $form, $mybb;
-
-    if (empty($args['title']) || $args['title'] != $lang->setting_ougc_xthreads_hide) {
-        return;
-    }
-
-    $threadfields = $cache->read('threadfields');
-
-    if (!($xthreads = function_exists('xthreads_gettfcache') && !empty($threadfields))) {
-        $args['content'] = $lang->setting_ougc_xthreads_information;
-        return;
-    }
-
-    $selected_list = $mybb->settings['ougc_customrep_xthreads_hide'];
-    if (isset($mybb->input['upsetting']['ougc_customrep_xthreads_hide'])) {
-        $selected_list = $mybb->input['upsetting']['ougc_customrep_xthreads_hide'];
-    }
-
-    $saved_fields = explode(',', $selected_list);
-
-    $option_list = $selected_list = [];
-    foreach ($threadfields as $tf) {
-        if (array_intersect([$tf['field']], $saved_fields)) {
-            $selected_list[] = $tf['field'];
-        }
-        $option_list[$tf['field']] = $tf['field'];
-    }
-
-    $args['content'] = $form->generate_select_box(
-        'upsetting[ougc_customrep_xthreads_hide][]',
-        $option_list,
-        $selected_list,
-        ['id' => 'row_setting_ougc_customrep_xthreads_hide', 'size' => 5, 'multiple' => true]
-    );
-}
-
 // Required for xThreads hack
 function ougc_customrep_editpost_end()
 {
@@ -1357,7 +1296,7 @@ function ougc_customrep_merge_posts(&$args)
     $query = $db->simple_select('ougc_customrep_log', 'lid', $where);
     while ($lid = $db->fetch_field($query, 'lid')) {
         // Update this log
-        $customrep->update_log($lid, ['pid' => $masterpid]);
+        logUpdate((int)$lid, ['pid' => $masterpid]);
     }
 }
 
@@ -2762,47 +2701,6 @@ class OUGC_CustomRep
 
         return true;
     }
-
-    // Update a log
-    public function update_log($lid, $data = [])
-    {
-        global $db;
-        $lid = (int)$lid;
-
-        $update_data = [];
-        if (isset($data['pid'])) {
-            $update_data['pid'] = (int)$data['pid'];
-        }
-        if (isset($data['uid'])) {
-            $update_data['uid'] = (int)$data['uid'];
-        }
-        if (isset($data['rid'])) {
-            $update_data['rid'] = (int)$data['rid'];
-        }
-        if (isset($data['dateline'])) {
-            $update_data['dateline'] = (int)$data['dateline'];
-        }
-
-        if ($update_data) {
-            $db->update_query('ougc_customrep_log', $update_data, 'lid=\'' . $lid . '\'');
-
-            // Since we are updating the pid, we need to update any user reputation as well
-            if (isset($update_data['pid'])) {
-                $query = $db->simple_select('reputation', 'rid, uid', 'lid=\'' . (int)$lid . '\'');
-                while ($rep = $db->fetch_array($query)) {
-                    // Actually update reputation
-                    $db->update_query('reputation', [
-                        'pid' => $update_data['pid'],
-                    ], 'rid=\'' . (int)$rep['rid'] . '\'');
-
-                    // Recount the reputation of this user - keep it in sync.
-                    reputationSync((int)$rep['uid']);
-                }
-            }
-            return true;
-        }
-        return false;
-    }
 }
 
 $GLOBALS['customrep'] = new OUGC_CustomRep();
@@ -2906,7 +2804,7 @@ if (class_exists('MybbStuff_MyAlerts_Formatter_AbstractFormatter')) {
             $rid = (int)$alertContent['rid'];
 
             if (empty($rid)) {
-                $log = \ougc\CustomReputation\Core\logGet($alert->getObjectId());
+                $log = logGet($alert->getObjectId());
 
                 if (!empty($log['rid'])) {
                     $rid = (int)$log['rid'];
