@@ -36,14 +36,13 @@ use function ougc\CustomReputation\Admin\pluginIsInstalled;
 use function ougc\CustomReputation\Admin\pluginUninstall;
 use function ougc\CustomReputation\Core\addHooks;
 use function ougc\CustomReputation\Core\cacheUpdate;
+use function ougc\CustomReputation\Core\forumGetRates;
+use function ougc\CustomReputation\Core\isAllowedForum;
 use function ougc\CustomReputation\Core\loadLanguage;
-use function ougc\CustomReputation\Core\logDelete;
-use function ougc\CustomReputation\Core\logInsert;
 use function ougc\CustomReputation\Core\rateGet;
 use function ougc\CustomReputation\Core\rateGetImage;
 use function ougc\CustomReputation\Core\rateGetName;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
-use function ougc\CustomReputation\Core\urlHandlerSet;
 
 use const ougc\CustomReputation\ROOT;
 
@@ -78,7 +77,6 @@ addHooks('ougc\CustomReputation\Hooks\Shared');
 
 global $plugins;
 
-// Add our hooks
 if (!defined('IN_ADMINCP') && defined('THIS_SCRIPT')) {
     switch (THIS_SCRIPT) {
         case 'forumdisplay.php':
@@ -88,12 +86,6 @@ if (!defined('IN_ADMINCP') && defined('THIS_SCRIPT')) {
         case 'editpost.php':
         case 'member.php':
         case 'attachment.php':
-            $plugins->add_hook('forumdisplay_thread', 'ougc_customrep_forumdisplay_thread');
-
-            $plugins->add_hook('portal_announcement', 'ougc_customrep_portal_announcement');
-
-            $plugins->add_hook('reputation_start', 'ougc_customrep_delete_reputation');
-
             $plugins->add_hook('postbit', 'ougc_customrep_postbit');
             break;
     }
@@ -136,183 +128,11 @@ function reload_ougc_customrep(): bool
     return cacheUpdate();
 }
 
-// Display ratings on forum display
-function ougc_customrep_forumdisplay_thread()
-{
-    global $fid, $customrep, $mybb, $db, $plugins, $footer, $templates, $threadcache;
-
-    $plugins->remove_hook('forumdisplay_thread', 'ougc_customrep_forumdisplay_thread');
-
-    if (!$mybb->settings['ougc_customrep_threadlist'] || !is_member(
-            $mybb->settings['ougc_customrep_threadlist'],
-            ['usergroup' => $fid, 'additionalgroups' => '']
-        )) {
-        return;
-    }
-
-    $customrep->set_forum($fid);
-
-    if (!$customrep->allowed_forum) {
-        return;
-    }
-
-    $fontAwesomeCode = '';
-
-    if ($mybb->settings['ougc_customrep_fontawesome']) {
-        eval('$fontAwesomeCode .= "' . $templates->get('ougccustomrep_headerinclude_fa') . '";');
-    }
-
-    $font_awesome = &$fontAwesomeCode;
-
-    eval('$footer .= "' . $templates->get('ougccustomrep_headerinclude') . '";');
-
-    $pids = [];
-    foreach ($threadcache as $thread) {
-        $pids[(int)$thread['firstpost']] = (int)$thread['firstpost'];
-    }
-
-    if (empty($pids)) {
-        return;
-    }
-
-    $pids = "pid IN ('" . implode("','", $pids) . "')";
-
-    $query = $db->simple_select(
-        'ougc_customrep_log',
-        '*',
-        $pids . ' AND rid IN (\'' . implode('\',\'', $customrep->rids) . '\')'
-    );
-
-    global $customReputationCacheQuery;
-
-    is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
-
-    while ($rep = $db->fetch_array($query)) {
-        $customReputationCacheQuery[$rep['rid']][$rep['pid']][$rep['lid']][$rep['uid']] = 1;
-    }
-
-    global $plugins;
-
-    $plugins->add_hook('forumdisplay_thread_end', 'ougc_customrep_forumdisplay_thread_end');
-}
-
-// Parse forum display
-function ougc_customrep_forumdisplay_thread_end(&$args)
-{
-    global $thread, $customrep;
-
-    if (substr($thread['closed'], 0, 6) == 'moved|') {
-        return;
-    }
-
-    $customrep->set_post(
-        ['tid' => $thread['tid'], 'pid' => $thread['firstpost'], 'uid' => $thread['uid'], 'fid' => $thread['fid']]
-    );
-
-    urlHandlerSet(get_thread_link($thread['tid']));
-
-    ougc_customrep_parse_postbit($thread);
-}
-
-// Display ratings on portal
-function ougc_customrep_portal_announcement()
-{
-    global $fid, $customrep, $mybb, $db, $plugins, $footer, $templates, $tids, $annfidswhere, $tunviewwhere, $numannouncements, $announcement;
-
-    if (!$mybb->settings['ougc_customrep_portal']) {
-        $plugins->remove_hook('portal_announcement', 'ougc_customrep_portal_announcement');
-        return;
-    }
-
-    if ($mybb->settings['ougc_customrep_portal'] != -1 && !is_member(
-            $mybb->settings['ougc_customrep_portal'],
-            ['usergroup' => $announcement['fid'], 'additionalgroups' => '']
-        )) {
-        return;
-    }
-
-    static $portal_cache = null;
-    if ($portal_cache === null) {
-        $portal_cache = [];
-
-        $query = $db->simple_select(
-            'threads t',
-            't.firstpost, t.fid',
-            "t.tid IN (0{$tids}){$annfidswhere}{$tunviewwhere} AND t.visible='1' AND t.closed NOT LIKE 'moved|%'"
-        );
-
-        $pids = [];
-        while ($thread = $db->fetch_array($query)) {
-            $fids[(int)$thread['fid']] = (int)$thread['fid'];
-            $pids[(int)$thread['firstpost']] = (int)$thread['firstpost'];
-        }
-
-        if (empty($pids)) {
-            return;
-        }
-
-        foreach ($fids as $fid) {
-            $customrep->set_forum($fid);
-
-            $portal_cache[$fid] = $customrep->allowed_forum;
-        }
-
-        if (empty($portal_cache)) {
-            $plugins->remove_hook('portal_announcement', 'ougc_customrep_portal_announcement');
-            return;
-        }
-
-        $pids = "pid IN ('" . implode("','", $pids) . "')";
-
-        $query = $db->simple_select(
-            'ougc_customrep_log',
-            '*',
-            $pids . ' AND rid IN (\'' . implode('\',\'', $customrep->rids) . '\')'
-        );
-
-        global $customReputationCacheQuery;
-
-        is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
-
-        while ($rep = $db->fetch_array($query)) {
-            $customReputationCacheQuery[$rep['rid']][$rep['pid']][$rep['lid']][$rep['uid']] = 1;
-        }
-
-        $fontAwesomeCode = '';
-
-        if ($mybb->settings['ougc_customrep_fontawesome']) {
-            eval('$fontAwesomeCode .= "' . $templates->get('ougccustomrep_headerinclude_fa') . '";');
-        }
-
-        $font_awesome = &$fontAwesomeCode;
-
-        eval('$footer .= "' . $templates->get('ougccustomrep_headerinclude') . '";');
-    }
-
-    if (empty($portal_cache[$announcement['fid']])) {
-        return;
-    }
-
-    $customrep->set_post(
-        [
-            'tid' => $announcement['tid'],
-            'pid' => $announcement['firstpost'],
-            'uid' => $announcement['uid'],
-            'fid' => $announcement['fid']
-        ]
-    );
-
-    urlHandlerSet(get_thread_link($announcement['tid']));
-
-    // Now we build the reputation bit
-    ougc_customrep_parse_postbit($announcement);
-}
-
 // Postbit
 function ougc_customrep_postbit(&$post)
 {
     global $mybb;
-    global $fid, $customrep, $tid, $templates, $thread;
+    global $fid, $tid, $templates, $thread;
 
     if (!empty($mybb->settings['ougc_customrep_firstpost']) && $post['pid'] != $thread['firstpost']) {
         return;
@@ -328,14 +148,14 @@ function ougc_customrep_postbit(&$post)
 
     global $customReputationCacheQuery;
 
+    $forumID = (int)$fid;
+
     if (!isset($customReputationCacheQuery)) {
         $customReputationCacheQuery = [];
 
         global $mybb;
 
-        $customrep->set_forum($fid);
-
-        if (!$customrep->allowed_forum) {
+        if (!isAllowedForum($forumID)) {
             global $plugins;
 
             $plugins->remove_hook('postbit', 'ougc_customrep_postbit');
@@ -386,10 +206,12 @@ function ougc_customrep_postbit(&$post)
             $pids = "pid='{$post['pid']}'";
         }
 
+        $forumsRateCache = forumGetRates($forumID);
+
         $query = $db->simple_select(
             'ougc_customrep_log',
             '*',
-            $pids . ' AND rid IN (\'' . implode('\',\'', $customrep->rids) . '\')'
+            $pids . ' AND rid IN (\'' . implode('\',\'', array_keys($forumsRateCache)) . '\')'
         );
 
         while ($rep = $db->fetch_array($query)) {
@@ -400,22 +222,12 @@ function ougc_customrep_postbit(&$post)
 
         $ignore_rules = [];
 
-        foreach ($customrep->cache['_reps'] as $rid => $rep) {
+        foreach ($forumsRateCache as $rid => $rep) {
             if ((int)$rep['ignorepoints'] && isset($customReputationCacheQuery[$rid])) {
                 $ignore_rules[$rid] = (int)$rep['ignorepoints'];
             }
         }
     }
-
-    $customrep->set_post(
-        [
-            'tid' => $post['tid'],
-            'pid' => $post['pid'],
-            'uid' => $post['uid'],
-            'fid' => $fid,
-            'firstpost' => $thread['firstpost']
-        ]
-    );
 
     if (!empty($ignore_rules)) {
         foreach ($ignore_rules as $rid => $ignorepoints) {
@@ -432,57 +244,33 @@ function ougc_customrep_postbit(&$post)
         }
     }
 
-    // Now we build the reputation bit
-    ougc_customrep_parse_postbit($post);
-}
-
-// When deleting a reputation delete any log assigned to it.
-// Partially MyBB's Code
-function ougc_customrep_delete_reputation()
-{
-    global $mybb;
-
-    if ($mybb->get_input('action') == 'delete') {
-        // Verify incoming POST request
-        verify_post_check($mybb->get_input('my_post_key'));
-
-        global $db;
-
-        // Fetch the existing reputation for this user given by our current user if there is one.
-        $query = $db->simple_select(
-            'reputation r LEFT JOIN ' . TABLE_PREFIX . 'users u ON (u.uid=r.adduid)',
-            'r.adduid, r.lid, u.uid, u.username',
-            'r.rid=\'' . $mybb->get_input('rid', 1) . '\''
-        );
-        $reputation = $db->fetch_array($query);
-
-        // Only administrators, super moderators, as well as users who gave a specifc vote can delete one.
-        if (!$mybb->usergroup['cancp'] && !$mybb->usergroup['issupermod'] && $reputation['adduid'] != $mybb->user['uid']) {
-            error_no_permission();
-        }
-
-        global $customrep;
-
-        // Delete the specified reputation log
-        if ((int)$reputation['lid'] > 0) {
-            // Delete the specified reputation & log
-            logDelete((int)$reputation['lid']);
-
-            global $uid, $user, $lang;
-
-            // Create moderator log
-            log_moderator_action(['uid' => $user['uid'], 'username' => $user['username']],
-                $lang->sprintf($lang->delete_reputation_log, $reputation['username'], $reputation['adduid']));
-
-            redirect('reputation.php?uid=' . $uid, $lang->vote_deleted_message);
-        }
-    }
+    ougc_customrep_parse_postbit($post, (int)$post['pid']);
 }
 
 // Parse posbit content output
-function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
+function ougc_customrep_parse_postbit(array &$postThreadObject, int $postID, int $setRateID = 0): bool
 {
-    global $mybb, $customrep;
+    $postData = get_post($postID);
+
+    if (empty($postData['pid'])) {
+        return false;
+    }
+
+    $threadData = get_thread($postData['tid']);
+
+    if (empty($threadData['tid'])) {
+        return false;
+    }
+
+    $forumID = (int)$threadData['fid'];
+
+    $forumRatesCache = forumGetRates($forumID);
+
+    if (empty($forumRatesCache)) {
+        return false;
+    }
+
+    global $mybb;
 
     $ratesListCode = '';
 
@@ -495,36 +283,37 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
 
     is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
 
-    foreach ($customrep->cache['_reps'] as $rid => $rate) {
-        if (!empty($rate['firstpost'])) {
-            $firstpost_only[$rid] = $rid;
+    foreach ($forumRatesCache as $rateID => $rateData) {
+        if (!empty($rateData['firstpost'])) {
+            $firstpost_only[$rateID] = $rateID;
         }
 
-        if (!$rate['inmultiple']) {
-            $unique_rids[$rid] = $rid;
+        if (empty($rateData['inmultiple'])) {
+            $unique_rids[$rateID] = $rateID;
         }
 
-        if (isset($customReputationCacheQuery[$rid][$customrep->post['pid']])) {
+        if (isset($customReputationCacheQuery[$rateID][$postID])) {
             //TODO
-            foreach ($customReputationCacheQuery[$rid][$customrep->post['pid']] as $votes) {
+            foreach ($customReputationCacheQuery[$rateID][$postID] as $votes) {
                 if (isset($votes[$mybb->user['uid']])) {
-                    $voted_rids[$rid] = $rid;
+                    $voted_rids[$rateID] = $rateID;
 
                     $voted = true;
                 }
             }
         }
     }
-    unset($rid, $rate);
+
+    unset($rateID, $rateData);
 
     global $templates, $lang;
 
     loadLanguage();
 
-    $post_url = get_post_link($customrep->post['pid'], $customrep->post['tid']);
+    $post_url = get_post_link($postID, $postData['tid']);
 
     $input = [
-        'pid' => $customrep->post['pid'],
+        'pid' => $postID,
         'my_post_key' => (isset($mybb->post_code) ? $mybb->post_code : generate_post_check()),
     ];
 
@@ -534,15 +323,15 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
         $lang->ougc_customrep_viewlatest = $lang->ougc_customrep_viewlatest_noajax;
     }
 
-    foreach ($customrep->cache['_reps'] as $rateID => $reputation) {
-        if (!is_member($reputation['forums'], ['usergroup' => $customrep->post['fid'], 'additionalgroups' => '']
+    foreach ($forumRatesCache as $rateID => $reputation) {
+        if (!is_member($reputation['forums'], ['usergroup' => $forumID, 'additionalgroups' => '']
         )) {
             continue;
         }
 
         // $firstpost_only[$rateID] stores the tid
-        // $customrep->post['firstpost'] is only set on post bit, since portal and thread list posts are indeed the first post
-        if (!empty($firstpost_only[$rateID]) && !empty($customrep->post['firstpost']) && $customrep->post['firstpost'] != $customrep->post['pid']) {
+        // $threadData['firstpost'] is only set on post bit, since portal and thread list posts are indeed the first post
+        if (!empty($firstpost_only[$rateID]) && !empty($threadData['firstpost']) && (int)$threadData['firstpost'] !== $postID) {
             continue;
         }
 
@@ -559,17 +348,19 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
         $ratePopUpUrl = $popupurl = urlHandlerBuild($input);
 
         $totalReceivedRates = 0;
+
         $classextra = '';
+
         if ($ajaxIsEnabled) {
-            $link = "javascript:OUGC_CustomReputation.Add('{$customrep->post['tid']}', '{$customrep->post['pid']}', '{$mybb->post_code}', '{$rateID}', '0');";
+            $link = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '0');";
             if (!empty($mybb->settings['ougc_customrep_delete']) && $reputation['allowdeletion']) {
-                $link_delete = "javascript:OUGC_CustomReputation.Add('{$customrep->post['tid']}', '{$customrep->post['pid']}', '{$mybb->post_code}', '{$rateID}', '1');";
+                $link_delete = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '1');";
             }
         }
 
         // Count the votes for this reputation in this post
-        if (isset($customReputationCacheQuery[$rateID][$customrep->post['pid']])) {
-            $totalReceivedRates = count($customReputationCacheQuery[$rateID][$customrep->post['pid']]);
+        if (isset($customReputationCacheQuery[$rateID][$postID])) {
+            $totalReceivedRates = count($customReputationCacheQuery[$rateID][$postID]);
         }
 
         $totalReceivedRates = my_number_format($totalReceivedRates);
@@ -588,8 +379,6 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
 
         $voted_class = &$userRatedThisClass;
 
-        $postID = (int)$customrep->post['pid'];
-
         eval('$totalReceivedRates = "' . $templates->get('ougccustomrep_rep_number', 1, 0) . '";');
 
         $number = &$totalReceivedRates;
@@ -601,7 +390,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
 
         $rateTitleText = '';
 
-        $can_vote = is_member($reputation['groups']) && $customrep->post['uid'] != $mybb->user['uid'];
+        $can_vote = is_member($reputation['groups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
 
         if ($voted && $voted_this) {
             $can_vote = false;
@@ -643,9 +432,9 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
 
         $rep = eval($templates->render('ougccustomrep_rep', 1, 0));
 
-        if (!empty($reputation['customvariable']) || $specific_rid !== null && (int)$specific_rid === (int)$rateID) {
-            $var['customrep_' . $rateID] = $rep;
-            /*if($specific_rid !== null)
+        if (!empty($reputation['customvariable']) || $setRateID && $setRateID === (int)$rateID) {
+            $postThreadObject['customrep_' . $rateID] = $rep;
+            /*if($setRateID)
             {
                 break;
             }*/
@@ -657,7 +446,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
     }
     unset($rateID, $reputation);
 
-    /*if($specific_rid !== null)
+    /*if($setRateID)
     {
         return false;
     }*/
@@ -667,7 +456,9 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
     $reputations = &$ratesListCode;
 
     // if $ratesListCode is empty maybe return false?
-    eval('$var[\'customrep\'] = "' . $templates->get('ougccustomrep') . '";');
+    eval('$postThreadObject[\'customrep\'] = "' . $templates->get('ougccustomrep') . '";');
+
+    return true;
 }
 
 function ougc_customrep_ajax_error($error)
@@ -798,10 +589,6 @@ class OUGC_CustomRep
     public $post = [];
 
     public $active = false;
-
-    public $newpoints_installed = false;
-
-    public $myalerts_installed = false;
 
     // Construct the data (?)
     public function __construct()

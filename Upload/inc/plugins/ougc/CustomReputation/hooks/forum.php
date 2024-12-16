@@ -33,7 +33,6 @@ namespace ougc\CustomReputation\Hooks\Forum;
 use MyBB;
 use MybbStuff_MyAlerts_AlertFormatterManager;
 use ougc\CustomReputation\Core\MyAlertsFormatter;
-
 use postParser;
 
 use function Newpoints\Core\points_add_simple;
@@ -53,10 +52,8 @@ use function ougc\CustomReputation\Core\modalRenderError;
 use function ougc\CustomReputation\Core\newPointsIsInstalled;
 use function ougc\CustomReputation\Core\rateGet;
 use function ougc\CustomReputation\Core\rateGetImage;
-
 use function ougc\CustomReputation\Core\rateGetName;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
-
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
@@ -265,6 +262,232 @@ function reputation_delete_end(): bool
     }
 
     logDelete((int)$existing_reputation['ougcCustomReputationCreatedOnLogID']);
+
+    return true;
+}
+
+function forumdisplay_thread(): bool
+{
+    global $mybb, $db;
+    global $fid, $footer, $threadcache;
+
+    static $done = false;
+
+    if ($done) {
+        return false;
+    }
+
+    $done = true;
+
+    if (empty($mybb->settings['ougc_customrep_threadlist']) || !is_member(
+            $mybb->settings['ougc_customrep_threadlist'],
+            ['usergroup' => $fid, 'additionalgroups' => '']
+        )) {
+        return false;
+    }
+
+    $forumID = (int)$fid;
+
+    if (!isAllowedForum($forumID)) {
+        return false;
+    }
+
+    $fontAwesomeCode = '';
+
+    if (!empty($mybb->settings['ougc_customrep_fontawesome'])) {
+        $fontAwesomeCode .= eval(getTemplate('headerinclude_fa'));
+    }
+
+    $font_awesome = &$fontAwesomeCode;
+
+    $footer .= eval(getTemplate('headerinclude'));
+
+    $postsIDs = [];
+
+    foreach ($threadcache as $threadData) {
+        $postsIDs[] = (int)$threadData['firstpost'];
+    }
+
+    if (empty($postsIDs)) {
+        return false;
+    }
+
+    $postsIDs = implode("','", $postsIDs);
+
+    $forumRatesCache = forumGetRates($forumID);
+
+    $ratesIDs = implode("','", array_keys($forumRatesCache));
+
+    $query = $db->simple_select(
+        'ougc_customrep_log',
+        '*',
+        "pid IN ('{$postsIDs}') AND rid IN ('{$ratesIDs}')"
+    );
+
+    global $customReputationCacheQuery;
+
+    is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
+
+    while ($logData = $db->fetch_array($query)) {
+        $customReputationCacheQuery[$logData['rid']][$logData['pid']][$logData['lid']][$logData['uid']] = 1;
+    }
+
+    return true;
+}
+
+function forumdisplay_thread_end(): bool
+{
+    global $thread;
+
+    if (my_substr($thread['closed'], 0, 6) === 'moved|') {
+        return false;
+    }
+
+    urlHandlerSet(get_thread_link($thread['tid']));
+
+    ougc_customrep_parse_postbit($thread, (int)$thread['firstpost']);
+
+    return true;
+}
+
+function portal_announcement(): bool
+{
+    global $mybb, $db;
+    global $footer;
+    global $tids, $annfidswhere, $tunviewwhere, $announcement;
+
+    if (empty($mybb->settings['ougc_customrep_portal'])) {
+        return false;
+    }
+
+    if (!is_member(
+        $mybb->settings['ougc_customrep_portal'],
+        ['usergroup' => $announcement['fid'], 'additionalgroups' => '']
+    )) {
+        return false;
+    }
+
+    static $ratesCachePortal = null;
+
+    if ($ratesCachePortal !== null && empty($ratesCachePortal)) {
+        return false;
+    }
+
+    if ($ratesCachePortal === null) {
+        $ratesCachePortal = [];
+
+        $query = $db->simple_select(
+            'threads t',
+            't.firstpost, t.fid',
+            "t.tid IN (0{$tids}){$annfidswhere}{$tunviewwhere} AND t.visible='1' AND t.closed NOT LIKE 'moved|%'"
+        );
+
+        $postIDs = $forumIDs = [];
+
+        while ($threadData = $db->fetch_array($query)) {
+            $forumIDs[] = (int)$threadData['fid'];
+
+            $postIDs[] = (int)$threadData['firstpost'];
+        }
+
+        if (empty($postIDs)) {
+            return false;
+        }
+
+        foreach ($forumIDs as $forumID) {
+            $ratesCachePortal[$forumID] = isAllowedForum($forumID);
+        }
+
+        if (empty($ratesCachePortal)) {
+            return false;
+        }
+
+        $postIDs = implode("','", $postIDs);
+
+        $forumRatesCache = forumGetRates((int)$announcement['fid']);
+
+        $ratesIDs = implode("','", array_keys($forumRatesCache));
+
+        $query = $db->simple_select(
+            'ougc_customrep_log',
+            'rid, pid, lid, uid',
+            "pid IN ('{$postIDs}') AND rid IN ('{$ratesIDs}')"
+        );
+
+        global $customReputationCacheQuery;
+
+        is_array($customReputationCacheQuery) || $customReputationCacheQuery = [];
+
+        while ($logData = $db->fetch_array($query)) {
+            $customReputationCacheQuery[$logData['rid']][$logData['pid']][$logData['lid']][$logData['uid']] = 1;
+        }
+
+        $fontAwesomeCode = '';
+
+        if (!empty($mybb->settings['ougc_customrep_fontawesome'])) {
+            $fontAwesomeCode .= eval(getTemplate('headerinclude_fa'));
+        }
+
+        $font_awesome = &$fontAwesomeCode;
+
+        $customThreadFieldsVariables = $customThreadFieldsHideSkip = $customThreadFieldsVariablesEditPost = '';
+
+        $footer .= eval(getTemplate('headerinclude'));
+    }
+
+    if (empty($ratesCachePortal[$announcement['fid']])) {
+        return false;
+    }
+
+    urlHandlerSet(get_thread_link($announcement['tid']));
+
+    ougc_customrep_parse_postbit($announcement, (int)$announcement['firstpost']);
+
+    return true;
+}
+
+function reputation_start(): bool
+{
+    global $mybb;
+
+    if ($mybb->get_input('action') !== 'delete') {
+        return false;
+    }
+
+    verify_post_check($mybb->get_input('my_post_key'));
+
+    global $db;
+
+    $reputationID = $mybb->get_input('rid', 1);
+
+    $query = $db->simple_select(
+        "reputation r LEFT JOIN {$db->table_prefix}users u ON (u.uid=r.adduid)",
+        'r.adduid, r.lid, u.uid, u.username',
+        "r.rid='{$reputationID}'"
+    );
+
+    $reputationData = $db->fetch_array($query);
+
+    if (
+        empty($mybb->usergroup['cancp']) &&
+        empty($mybb->usergroup['issupermod']) &&
+        (int)$reputationData['adduid'] !== (int)$mybb->user['uid']
+    ) {
+        error_no_permission();
+    }
+
+    if ($reputationData['lid'] > 0) {
+        logDelete((int)$reputationData['lid']);
+
+        global $uid, $user, $lang;
+
+        log_moderator_action(
+            ['uid' => $user['uid'], 'username' => $user['username']],
+            $lang->sprintf($lang->delete_reputation_log, $reputationData['username'], $reputationData['adduid'])
+        );
+
+        redirect("reputation.php?uid={$uid}", $lang->vote_deleted_message);
+    }
 
     return true;
 }
@@ -658,7 +881,7 @@ function showthread_start09()
         'content' => ''
     ];
 
-    ougc_customrep_parse_postbit($post, $rateID);
+    ougc_customrep_parse_postbit($post, $postID, $rateID);
 
     $userReputation = &$post['userreputation'];
 
