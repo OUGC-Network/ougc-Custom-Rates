@@ -315,7 +315,7 @@ function rateDelete(int $rateID): bool
     return true;
 }
 
-function rateImageGet(string $rateImage, int $rateID): string
+function rateGetImage(string $rateImage, int $rateID): string
 {
     global $customReputationCacheImages;
 
@@ -336,6 +336,21 @@ function rateImageGet(string $rateImage, int $rateID): string
     }
 
     return $customReputationCacheImages[$rateID];
+}
+
+function rateGetName(int $rateID): string
+{
+    global $lang;
+
+    loadLanguage();
+
+    $lang_val = "ougc_customrep_name_{$rateID}";
+
+    if (!empty($lang->{$lang_val})) {
+        return $lang->{$lang_val};
+    }
+
+    return '';
 }
 
 function logGet(int $logID): array

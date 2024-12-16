@@ -27,13 +27,18 @@
  ****************************************************************************/
 
 // Die if IN_MYBB is not defined, for security reasons.
+use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logAdminAction;
 use function ougc\CustomReputation\Core\rateDelete;
 use function ougc\CustomReputation\Core\rateGet;
-use function ougc\CustomReputation\Core\rateImageGet;
+use function ougc\CustomReputation\Core\rateGetImage;
 
 use function ougc\CustomReputation\Core\rateInsert;
 use function ougc\CustomReputation\Core\rateUpdate;
+
+use function ougc\CustomReputation\Core\urlHandlerBuild;
+
+use function ougc\CustomReputation\Core\urlHandlerSet;
 
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
@@ -45,26 +50,29 @@ defined('IN_MYBB') or die('Direct initialization of this file is not allowed.');
 $customrep->meets_requirements() or $customrep->admin_redirect($customrep->message, true);
 
 // Set current url
-$customrep->set_url('index.php?module=config-ougc_customrep');
+urlHandlerSet('index.php?module=config-ougc_customrep');
 
 // Set/load defaults
-$customrep->lang_load();
+loadLanguage();
 
 // Page tabs
 $sub_tabs['ougc_customrep_view'] = [
     'title' => $lang->ougc_customrep_tab_view,
-    'link' => $customrep->build_url(),
+    'link' => urlHandlerBuild(),
     'description' => $lang->ougc_customrep_tab_view_d
 ];
 $sub_tabs['ougc_customrep_add'] = [
     'title' => $lang->ougc_customrep_tab_add,
-    'link' => $customrep->build_url(['action' => 'add']),
+    'link' => urlHandlerBuild(['action' => 'add']),
     'description' => $lang->ougc_customrep_tab_add_d
 ];
 if ($mybb->get_input('action') == 'edit') {
     $sub_tabs['ougc_customrep_edit'] = [
         'title' => $lang->ougc_customrep_tab_edit,
-        'link' => $customrep->build_url(['action' => 'edit', 'rid' => $mybb->get_input('rid', 1)]),
+        'link' => urlHandlerBuild([
+            'action' => 'edit',
+            'rid' => $mybb->get_input('rid', 1)
+        ]),
         'description' => $lang->ougc_customrep_tab_edit_d
     ];
 }
@@ -118,7 +126,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $group_checked['none'] = 'checked="checked"';
     } else {
         $mybb->input['groups_type'] = 'custom';
-        $mybb->input['groups'] = $customrep->clean_array($mybb->input['groups'], false);
+        $mybb->input['groups'] = array_unique(
+            array_map(
+                'intval',
+                !is_array($mybb->input['groups']) ? explode(',', $mybb->input['groups']) : $mybb->input['groups']
+            )
+        );
         $group_checked['custom'] = 'checked="checked"';
     }
 
@@ -137,7 +150,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $forum_checked['none'] = 'checked="checked"';
     } else {
         $mybb->input['forums_type'] = 'custom';
-        $mybb->input['forums'] = $customrep->clean_array($mybb->input['forums'], false);
+        $mybb->input['forums'] = array_unique(
+            array_map(
+                'intval',
+                !is_array($mybb->input['forums']) ? explode(',', $mybb->input['forums']) : $mybb->input['forums']
+            )
+        );
         $forum_checked['custom'] = 'checked="checked"';
     }
 
@@ -164,10 +182,10 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     }
 
     if ($add) {
-        $form = new Form($customrep->build_url(['action' => 'add']), 'post');
+        $form = new Form(urlHandlerBuild(['action' => 'add']), 'post');
         $form_container = new FormContainer($sub_tabs['ougc_customrep_add']['title']);
     } else {
-        $form = new Form($customrep->build_url(['action' => 'edit', 'rid' => $reputation['rid']]), 'post');
+        $form = new Form(urlHandlerBuild(['action' => 'edit', 'rid' => $reputation['rid']]), 'post');
         $form_container = new FormContainer($sub_tabs['ougc_customrep_edit']['title']);
     }
 
@@ -345,7 +363,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
     $page->add_breadcrumb_item($lang->delete);
 
-    $page->output_confirm_action($customrep->build_url(['action' => 'delete', 'rid' => $mybb->get_input('rid', 1)])
+    $page->output_confirm_action(urlHandlerBuild(['action' => 'delete', 'rid' => $mybb->get_input('rid', 1)])
     );
 } else {
     $page->output_header($lang->ougc_customrep);
@@ -400,19 +418,19 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             $customrep->admin_redirect();
         }
 
-        $form = new Form($customrep->build_url(['action' => 'updatedisporder']), 'post');
+        $form = new Form(urlHandlerBuild(['action' => 'updatedisporder']), 'post');
 
         while ($reputation = $db->fetch_array($query)) {
             if ($mybb->settings['ougc_customrep_fontawesome']) {
                 $image = '<i class="' . $reputation['image'] . '" aria-hidden="true"></i>';
             } else {
-                $image = '<img src="' . rateImageGet(
+                $image = '<img src="' . rateGetImage(
                         $reputation['image'],
                         (int)$reputation['rid']
                     ) . '" />';
             }
 
-            $link = $customrep->build_url(['action' => 'edit', 'rid' => $reputation['rid']]);
+            $link = urlHandlerBuild(['action' => 'edit', 'rid' => $reputation['rid']]);
 
             $table->construct_cell($image, ['class' => 'align_center']);
             $table->construct_cell("<a href='{$link}'>" . htmlspecialchars_uni($reputation['name']) . '</a>');
@@ -431,7 +449,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             $popup->add_item($lang->ougc_customrep_tab_edit, $link);
             $popup->add_item(
                 $lang->delete,
-                $customrep->build_url(['action' => 'delete', 'rid' => $reputation['rid']])
+                urlHandlerBuild(['action' => 'delete', 'rid' => $reputation['rid']])
             );
             $table->construct_cell($popup->fetch(), ['class' => 'align_center']);
 
@@ -439,11 +457,11 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         }
 
         // Set url to use
-        $customrep->set_url('index.php');
+        urlHandlerSet('index.php');
 
         // Multipage
         if (($multipage = trim(
-            draw_admin_pagination($mybb->get_input('page', 1), $perpage, $repcount, $customrep->build_url())
+            draw_admin_pagination($mybb->get_input('page', 1), $perpage, $repcount, urlHandlerBuild())
         ))) {
             echo $multipage;
         }
@@ -457,7 +475,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             if ($mybb->get_input('page', 1) == $p / 10) {
                 $limitstring .= $p . $s;
             } else {
-                $limitstring .= '<a href="' . $customrep->build_url(['perpage' => $p]) . '">' . $p . '</a>' . $s;
+                $limitstring .= '<a href="' . urlHandlerBuild(['perpage' => $p]) . '">' . $p . '</a>' . $s;
             }
         }
         $limitstring .= '</div>';

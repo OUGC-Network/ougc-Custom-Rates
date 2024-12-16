@@ -35,14 +35,15 @@ use function ougc\CustomReputation\Core\logGet;
 use function ougc\CustomReputation\Core\logInsert;
 use function ougc\CustomReputation\Core\logUpdate;
 use function ougc\CustomReputation\Core\rateGet;
-use function ougc\CustomReputation\Core\rateImageGet;
+use function ougc\CustomReputation\Core\rateGetImage;
+use function ougc\CustomReputation\Core\rateGetName;
 use function ougc\CustomReputation\Core\rateInsert;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
+
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
 use const ougc\CustomReputation\ROOT;
 
-// Die if IN_MYBB is not defined, for security reasons.
 defined('IN_MYBB') or die('This file cannot be accessed directly.');
 
 // You can uncomment the lines below to avoid storing some settings in the DB
@@ -114,8 +115,9 @@ defined('PLUGINLIBRARY') or define('PLUGINLIBRARY', MYBB_ROOT . 'inc/plugins/plu
 // Plugin API
 function ougc_customrep_info()
 {
-    global $lang, $customrep;
-    $customrep->lang_load();
+    global $lang;
+
+    loadLanguage();
 
     return [
         'name' => 'OUGC Custom Reputation',
@@ -140,7 +142,7 @@ function ougc_customrep_info()
 function ougc_customrep_activate()
 {
     global $lang, $customrep, $PL;
-    $customrep->lang_load();
+    loadLanguage();
     $customrep->meets_requirements() or $customrep->admin_redirect($customrep->message, true);
 
     $PL->stylesheet(
@@ -841,7 +843,7 @@ function ougc_customrep_attachment_start()
         return;
     }
 
-    $customrep->lang_load();
+    loadLanguage();
 
     error($lang->ougc_customrep_error_nopermission_attachment);
 }
@@ -911,7 +913,7 @@ function ougc_customrep_forumdisplay_thread_end(&$args)
         ['tid' => $thread['tid'], 'pid' => $thread['firstpost'], 'uid' => $thread['uid'], 'fid' => $thread['fid']]
     );
 
-    $customrep->set_url(get_thread_link($thread['tid']));
+    urlHandlerSet(get_thread_link($thread['tid']));
 
     ougc_customrep_parse_postbit($thread);
 }
@@ -996,7 +998,7 @@ function ougc_customrep_portal_announcement()
         ]
     );
 
-    $customrep->set_url(get_thread_link($announcement['tid']));
+    urlHandlerSet(get_thread_link($announcement['tid']));
 
     // Now we build the reputation bit
     ougc_customrep_parse_postbit($announcement);
@@ -1127,7 +1129,7 @@ function ougc_customrep_member_profile_end()
 
     eval('$footer .= "' . $templates->get('ougccustomrep_headerinclude') . '";');
 
-    $customrep->lang_load();
+    loadLanguage();
 
     $where = [];
 
@@ -1197,7 +1199,7 @@ function ougc_customrep_member_profile_end()
         $number = my_number_format($stats_received[$rid]);
         eval('$number = "' . $templates->get('ougccustomrep_profile_number') . '";');
 
-        $reputation['image'] = rateImageGet($reputation['image'], (int)$rid);
+        $reputation['image'] = rateGetImage($reputation['image'], (int)$rid);
 
         eval('$image = "' . $templates->get($tmplt_img, 1, 0) . '";');
 
@@ -1224,7 +1226,7 @@ function ougc_customrep_member_profile_end()
         $number = my_number_format($stats_given[$rid]);
         eval('$number = "' . $templates->get('ougccustomrep_profile_number') . '";');
 
-        $reputation['image'] = rateImageGet($reputation['image'], (int)$rid);
+        $reputation['image'] = rateGetImage($reputation['image'], (int)$rid);
 
         eval('$image = "' . $templates->get($tmplt_img, 1, 0) . '";');
 
@@ -1378,7 +1380,7 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
 
     global $templates, $lang;
 
-    $customrep->lang_load();
+    loadLanguage();
 
     $post_url = get_post_link($customrep->post['pid'], $customrep->post['tid']);
 
@@ -1408,9 +1410,9 @@ function ougc_customrep_parse_postbit(&$var, $specific_rid = null)
         $reputation['name'] = htmlspecialchars_uni($reputation['name']);
         $input['action'] = 'customrep';
         $input['rid'] = $rid;
-        $link = $customrep->build_url($input);
+        $link = urlHandlerBuild($input);
         $input['action'] = 'customreppu';
-        $popupurl = $customrep->build_url($input);
+        $popupurl = urlHandlerBuild($input);
 
         $number = 0;
         $classextra = '';
@@ -1515,11 +1517,11 @@ function ougc_customrep_request()
 {
     global $customrep, $mybb, $tid, $templates, $thread, $fid, $lang;
 
-    $customrep->lang_load();
+    loadLanguage();
 
     $ajax_enabled = $mybb->settings['use_xmlhttprequest'] && $mybb->settings['ougc_customrep_enableajax'];
 
-    $customrep->set_url(get_thread_link($tid)); //TODO
+    urlHandlerSet(get_thread_link($tid)); //TODO
 
     // Save four queries here
     $templates->cache(
@@ -1578,7 +1580,7 @@ function ougc_customrep_request()
             $parser = new postParser();
         }
 
-        $popupurl = $customrep->build_url([
+        $popupurl = urlHandlerBuild([
             'pid' => $customrep->post['pid'],
             'my_post_key' => (isset($mybb->post_code) ? $mybb->post_code : generate_post_check()),
             'action' => 'customreppu',
@@ -1608,9 +1610,12 @@ function ougc_customrep_request()
             $page = 1;
         }
 
-        $customrep->set_url(get_post_link($customrep->post['pid'], $customrep->post['tid']));
-        $multipage_url = $customrep->build_url(false, ['page', 'pid', 'tid']);
+        urlHandlerSet(get_post_link($customrep->post['pid'], $customrep->post['tid']));
+
+        $multipage_url = urlHandlerBuild();
+
         $multipage = multipage($count, $perpage, $page, "javascript:MyBB.popupWindow('/{$popupurl}&amp;page={page}');");
+
         if (!$multipage) {
             $multipage = '';
         }
@@ -1916,7 +1921,7 @@ function ougc_customrep_ajax($data)
 function ougc_customrep_modal_error($error_message = '', $title = '')
 {
     global $customrep, $lang, $templates, $theme;
-    $customrep->lang_load();
+    loadLanguage();
 
     if (!$title) {
         $title = $lang->ougc_customrep_error;
@@ -1930,7 +1935,7 @@ function ougc_customrep_modal_error($error_message = '', $title = '')
 function ougc_customrep_modal($content = '', $title = '', $desc = '', $multipage = '')
 {
     global $customrep, $lang, $templates, $theme;
-    $customrep->lang_load();
+    loadLanguage();
 
     $page = eval($templates->render('ougccustomrep_misc', 1, 0));
     $modal = eval($templates->render('ougccustomrep_modal', 1, 0));
@@ -1947,7 +1952,7 @@ function ougc_customrep_xthreads_hide($value = '', $field = true)
 
     $fid = (int)$fid;
 
-    $customrep->lang_load();
+    loadLanguage();
 
     static $reps = null;
 
@@ -2203,18 +2208,6 @@ class OUGC_CustomRep
         }
     }
 
-    // Load our language file if neccessary
-    public function lang_load()
-    {
-        loadLanguage();
-    }
-
-    // Set url
-    public function set_url($url)
-    {
-        $this->url = urlHandlerSet($url);
-    }
-
     // Check PL requirements
     public function meets_requirements()
     {
@@ -2224,7 +2217,8 @@ class OUGC_CustomRep
 
         if (!file_exists(PLUGINLIBRARY)) {
             global $lang;
-            $this->lang_load();
+
+            loadLanguage();
 
             $this->message = $lang->sprintf($lang->ougc_customrep_plreq, $info['pl']['url'], $info['pl']['version']);
             return false;
@@ -2234,7 +2228,8 @@ class OUGC_CustomRep
 
         if ($PL->version < $info['pl']['version']) {
             global $lang;
-            $this->lang_load();
+
+            loadLanguage();
 
             $this->message = $lang->sprintf(
                 $lang->ougc_customrep_plold,
@@ -2268,14 +2263,8 @@ class OUGC_CustomRep
             flash_message($message, ($error ? 'error' : 'success'));
         }
 
-        admin_redirect($this->build_url());
+        admin_redirect(urlHandlerBuild());
         exit;
-    }
-
-    // Build an url parameter
-    public function build_url($urlappend = [], $fetch_input_url = false)
-    {
-        return urlHandlerBuild($urlappend, $fetch_input_url);
     }
 
     // Update the cache
@@ -2313,22 +2302,6 @@ class OUGC_CustomRep
         $cache->update('ougc_customrep', $cacheData);
 
         return true;
-    }
-
-    // Clean a string/array and return it
-    public function clean_array($array, $implode = true)
-    {
-        if (!is_array($array)) {
-            $array = explode(',', $array);
-        }
-
-        $array = array_unique(array_map('intval', $array));
-
-        if ($implode) {
-            return implode(',', $array);
-        }
-
-        return $array;
     }
 
     // Set reputation data
@@ -2380,11 +2353,23 @@ class OUGC_CustomRep
         global $mybb;
 
         if ($mybb->request_method == 'post') {
-            foreach ((array)$mybb->input as $key => $value) {
+            foreach ($mybb->input as $key => $value) {
                 if (isset($this->rep_data[$key])) {
                     $this->rep_data[$key] = $value;
+
                     if ($key == 'groups' || $key == 'forums') {
-                        $this->rep_data[$key] = $this->clean_array($this->rep_data[$key]);
+                        $this->rep_data[$key] = implode(
+                            ',',
+                            array_unique(
+                                array_map(
+                                    'intval',
+                                    !is_array($this->rep_data[$key]) ? explode(
+                                        ',',
+                                        $this->rep_data[$key]
+                                    ) : $this->rep_data[$key]
+                                )
+                            )
+                        );
                     }
                 }
             }
@@ -2438,19 +2423,32 @@ class OUGC_CustomRep
         foreach ($reps as $rid => &$rep) {
             if ($rep['forums'] == '' || ($rep['forums'] != -1 && !in_array(
                         $fid,
-                        $this->clean_array($rep['forums'], false)
+                        array_unique(
+                            array_map(
+                                'intval',
+                                !is_array($rep['forums']) ? explode(',', $rep['forums']) : $rep['forums']
+                            )
+                        )
                     ))) {
                 unset($reps[$rid]);
                 continue;
             }
 
-            if (($name = $this->get_name($rid))) {
+            if (($name = rateGetName((int)$rid))) {
                 $rep['name'] = $name;
             }
 
             $rep['name'] = htmlspecialchars_uni($rep['name']);
-            $rep['image'] = rateImageGet($rep['image'], (int)$rid);
-            $rep['groups'] = $this->clean_array($rep['groups']);
+            $rep['image'] = rateGetImage($rep['image'], (int)$rid);
+            $rep['groups'] = implode(
+                ',',
+                array_unique(
+                    array_map(
+                        'intval',
+                        !is_array($rep['groups']) ? explode(',', $rep['groups']) : $rep['groups']
+                    )
+                )
+            );
 
             $this->cache['_reps'][$rid] = $rep;
         }
@@ -2468,21 +2466,6 @@ class OUGC_CustomRep
     public function set_post(array $post = [])
     {
         $this->post = $post;
-    }
-
-    // We want multi-lang support (this doesn't work for ACP, to avoud confussions)
-    public function get_name($rid)
-    {
-        global $lang;
-        $this->lang_load();
-
-        $lang_val = 'ougc_customrep_name_' . (int)$rid;
-
-        if (!empty($lang->$lang_val)) {
-            return $lang->$lang_val;
-        }
-
-        return false;
     }
 }
 
@@ -2615,7 +2598,7 @@ if (class_exists('MybbStuff_MyAlerts_Formatter_AbstractFormatter')) {
         {
             global $customrep;
 
-            $customrep->lang_load();
+            loadLanguage();
         }
 
         /**
