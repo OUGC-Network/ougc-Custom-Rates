@@ -1,0 +1,94 @@
+<script>
+    /***************************************************************************
+     *
+     *    OUGC Custom Reputation plugin (JAVASCRIPT FILE)
+     *    Author: Omar Gonzalez
+     *    Copyright: © 2012 - 2020 Omar Gonzalez
+     *
+     *    Website: https://ougc.network
+     *
+     *    Allow users rate posts with custom post reputations with rich features.
+     *
+     ***************************************************************************
+
+     ****************************************************************************
+     This program is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License, or
+     (at your option) any later version.
+
+     This program is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+     ****************************************************************************/
+
+    var OUGC_CustomReputation = {
+        Add: function (tid, pid, postcode, rid, del) {
+            var deleteit = '';
+            if (del == 1) {
+                deleteit = '&delete=1';
+            }
+
+            $.ajax(
+                {
+                    url: 'showthread.php?tid=' + tid + '&action=customrep&pid=' + pid + '&my_post_key=' + postcode + '&rid=' + rid + deleteit,
+                    type: 'post',
+                    dataType: 'json',
+                    success: function (request) {
+                        if (request.errors) {
+                            alert(request.errors);
+                            return false;
+                        }
+                        if (request.success == 1) {
+                            $('#customrep_' + parseInt(request.pid)).replaceWith(request.content);
+                            $('#customrep_' + parseInt(request.pid) + '_' + parseInt(request.rid)).replaceWith(request.content_rep);
+                            $('#customrep_rep_' + parseInt(request.pid)).replaceWith(request.userreputation);
+
+                            if (typeof ougccustomrep_xthreads_activate !== 'undefined') {
+                                $.get('showthread.php?tid=' + tid + '&pid=' + pid, function (data) {
+                                    {
+                                        $xthreads_variables
+                                    }
+                                });
+                            }
+
+                            return true;
+                        }
+                    }
+                });
+        },
+
+        xThreads: function (value, field) {
+            var input = parseInt(value);
+
+            {
+                $xthreads_hideskip
+            }
+
+            if (value > 0) {
+                $('#xt_' + field).show();
+            } else {
+                $('#xt_' + field).hide();
+            }
+        },
+
+        xThreadsHideSet: function (field) {
+            if (typeof window.hide_fields === 'undefined') {
+                window.hide_fields = [];
+            }
+
+            window.hide_fields = $.merge([field], window.hide_fields);
+        },
+    }
+
+    $(document).ready(function () {
+        {
+            $xthreads_variables_editpost
+        }
+    });
+</script>
+{$font_awesome}

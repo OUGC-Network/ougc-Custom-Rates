@@ -1,0 +1,50 @@
+{
+  "firstpost": {
+    "optionscode": "yesno",
+    "value": 1
+  },
+  "delete": {
+    "optionscode": "yesno",
+    "value": 1
+  },
+  "perpage": {
+    "optionscode": "numeric",
+    "value": 1
+  },
+  "fontawesome": {
+    "optionscode": "yesno",
+    "value": 0
+  },
+  "fontawesome_acp": {
+    "optionscode": "text",
+    "value": "<link href=\"https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css\" rel=\"stylesheet\" integrity=\"sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN\" crossorigin=\"anonymous\">"
+  },
+  "threadlist": {
+    "optionscode": "forumselect",
+    "value": -1
+  },
+  "portal": {
+    "optionscode": "forumselect",
+    "value": -1
+  },
+  "xthreads_hide": {
+    "optionscode": "text",
+    "value": ""
+  },
+  "stats_profile": {
+    "optionscode": "yesno",
+    "value": 1
+  },
+  "enableajax": {
+    "optionscode": "yesno",
+    "value": 1
+  },
+  "guests_popup": {
+    "optionscode": "yesno",
+    "value": 0
+  },
+  "multiple": {
+    "optionscode": "yesno",
+    "value": 0
+  }
+}

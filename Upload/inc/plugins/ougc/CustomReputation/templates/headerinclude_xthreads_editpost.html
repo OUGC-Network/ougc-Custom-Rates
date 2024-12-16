@@ -1,0 +1,9 @@
+$('[name^="xthreads_{$xt_field}"]').on('change', function() {
+if($('input[name^="xthreads_{$xt_field}"]').is(":checkbox") || $('input[name^="xthreads_{$xt_field}"]').is(":radio"))
+{
+OUGC_CustomReputation.xThreads(+this.value, '{$xt_field}');
+return true;
+}
+OUGC_CustomReputation.xThreads(+this.value, '{$xt_field}');
+});
+OUGC_CustomReputation.xThreads('{$default_value}', '{$xt_field}');

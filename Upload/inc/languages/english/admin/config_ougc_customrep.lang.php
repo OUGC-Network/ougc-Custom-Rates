@@ -104,6 +104,8 @@ $l['ougc_customrep_error_invaliddisporder'] = 'Invalid display order.';
 $l['ougc_customrep_error_invalidreptype'] = 'Invalid reputation level.';
 
 // Settings
+$l['setting_group_ougcCustomReputation'] = 'Custom Reputation';
+$l['setting_group_ougcCustomReputation_desc'] = 'Allow users rate posts with custom post reputations with rich features.';
 $l['setting_ougc_customrep_firstpost'] = 'First Post Only Global Switch';
 $l['setting_ougc_customrep_firstpost_desc'] = 'Whether if enable this feature only for the first post of a thread. Turn off to manage on a per rate basis.';
 $l['setting_ougc_customrep_delete'] = 'Allow Deletion Global Switch';
@@ -118,16 +120,16 @@ $l['setting_ougc_customrep_threadlist'] = 'Display On Thread Listing';
 $l['setting_ougc_customrep_threadlist_desc'] = 'Select the forums where you want to display ratings within the forum thread list.';
 $l['setting_ougc_customrep_portal'] = 'Display On Portal Announcements';
 $l['setting_ougc_customrep_portal_desc'] = 'Select the forums where threads need to be from to display its custom reputation box within the portal announcements listing.';
-$l['setting_ougc_xthreads_hide'] = 'Active xThreads Hide Feature';
-$l['setting_ougc_xthreads_hide_desc'] = 'Select which xThreads fields this feature should hijack to control display status. <a href="https://ougc.network/module?faqs&filtertf_plugins_code=ougc_customrep">Please read the documentation for this feature.<a/>';
-$l['setting_ougc_stats_profile'] = 'Display Users Stats in Profiles';
-$l['setting_ougc_stats_profile_desc'] = 'Enable this setting to display user stats within profiles.';
-$l['setting_ougc_enableajax'] = 'Enable Ajax Features';
-$l['setting_ougc_enableajax_desc'] = 'Enable Ajax features. Please note that the "Enable XMLHttp request features?" setting under the "Server and Optimization Options" settings group needs to be turned on ("Yes") for Ajax featues to work.';
-$l['setting_ougc_guests_popup'] = 'Allow Guests to View Popup';
-$l['setting_ougc_guests_popup_desc'] = 'Enable this setting if you want to allow guests viewing rate detail modals.';
-$l['setting_ougc_multiple'] = 'Multiple Rating Global Switch';
-$l['setting_ougc_multiple_desc'] = 'Enable this setting to allow users to rate post multiple times (using different ratings).';
+$l['setting_ougc_customrep_xthreads_hide'] = 'Active xThreads Hide Feature';
+$l['setting_ougc_customrep_xthreads_hide_desc'] = 'Select which xThreads fields this feature should hijack to control display status. <a href="https://ougc.network/module?faqs&filtertf_plugins_code=ougc_customrep">Please read the documentation for this feature.<a/>';
+$l['setting_ougc_customrep_stats_profile'] = 'Display Users Stats in Profiles';
+$l['setting_ougc_customrep_stats_profile_desc'] = 'Enable this setting to display user stats within profiles.';
+$l['setting_ougc_customrep_enableajax'] = 'Enable Ajax Features';
+$l['setting_ougc_customrep_enableajax_desc'] = 'Enable Ajax features. Please note that the "Enable XMLHttp request features?" setting under the "Server and Optimization Options" settings group needs to be turned on ("Yes") for Ajax featues to work.';
+$l['setting_ougc_customrep_guests_popup'] = 'Allow Guests to View Popup';
+$l['setting_ougc_customrep_guests_popup_desc'] = 'Enable this setting if you want to allow guests viewing rate detail modals.';
+$l['setting_ougc_customrep_multiple'] = 'Multiple Rating Global Switch';
+$l['setting_ougc_customrep_multiple_desc'] = 'Enable this setting to allow users to rate post multiple times (using different ratings).';
 
 $l['setting_ougc_xthreads_information'] = '<span style="color: gray;">To be able to use this feature you need to install <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> and create some fields according to the documentation.</span>';
 

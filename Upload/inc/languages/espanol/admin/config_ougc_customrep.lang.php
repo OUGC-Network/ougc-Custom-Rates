@@ -95,6 +95,8 @@ $l['ougc_customrep_error_invaliddisporder'] = 'Orden inválido.';
 $l['ougc_customrep_error_invalidreptype'] = 'Nivel de reputación inválido.';
 
 // Settings
+$l['setting_group_ougcCustomReputation'] = 'Custom Reputation';
+$l['setting_group_ougcCustomReputation_desc'] = 'Permite dar reputación personalizada en las publicaciones.';
 $l['setting_ougc_customrep_firstpost'] = 'Primer mensaje solamente (global)';
 $l['setting_ougc_customrep_firstpost_desc'] = 'Habilita esta opción si deseas que solo se permitan reacciones en el primer mensaje de un tema. Desactiva si deseas configurar esta opción para cada reacción.';
 $l['setting_ougc_customrep_delete'] = 'Permitir borrar (global)';
@@ -109,13 +111,13 @@ $l['setting_ougc_customrep_threadlist'] = 'Mostrar en lista de temas';
 $l['setting_ougc_customrep_threadlist_desc'] = 'Selecciona los foros donde se mostrarán las reacciones en la lista de temas.';
 $l['setting_ougc_customrep_portal'] = 'Mostrar en anuncios del portal';
 $l['setting_ougc_customrep_portal_desc'] = 'Selecciona los foros cuyos temas en el portal podrán mostrar la caja de reacciones.';
-$l['setting_ougc_xthreads_hide'] = 'Activar Característica xThreads';
-$l['setting_ougc_xthreads_hide_desc'] = 'Selecciona que campos de xThreads se deben de considerar para controlar el contenido a mostrar. <a href="https://ougc.network/module?faqs&filtertf_plugins_code=ougc_customrep">Favor de leer la documentación para más información.</a> <a href="https://mybb-es.com/hilo-1-8-ougc-custom-reputation-xthreads-pide-a-usuarios-reaccionar-para-mostrar-contenido">También puedes leer la siguiente guía.</a>';
-$l['setting_ougc_stats_profile'] = 'Mostrar estadísticas de los usuarios en sus perfiles';
-$l['setting_ougc_stats_profile_desc'] = 'Habilita esta característica para mostrar las estadísticas de reacciones dadas y recibidas en los perfiles de los usuarios.';
-$l['setting_ougc_enableajax'] = 'Habilitar Características Ajax';
-$l['setting_ougc_enableajax_desc'] = 'Habilitar las características que requieren Ajax. Tenga en cuenta que debe permitirlo en la opción "¿Activar funciones de XMLHttp request?", la cual se encuentra en los ajustes de "Servidor y opciones optimización". De lo contrario, esta función no servirá de nada';
-$l['setting_ougc_guests_popup'] = 'Permitir a los visitantes ver los Popup';
-$l['setting_ougc_guests_popup_desc'] = 'Habilita esta opción si deseas que los visitantes puedan ver las reacciones recibidas a un mensaje.';
+$l['setting_ougc_customrep_xthreads_hide'] = 'Activar Característica xThreads';
+$l['setting_ougc_customrep_xthreads_hide_desc'] = 'Selecciona que campos de xThreads se deben de considerar para controlar el contenido a mostrar. <a href="https://ougc.network/module?faqs&filtertf_plugins_code=ougc_customrep">Favor de leer la documentación para más información.</a> <a href="https://mybb-es.com/hilo-1-8-ougc-custom-reputation-xthreads-pide-a-usuarios-reaccionar-para-mostrar-contenido">También puedes leer la siguiente guía.</a>';
+$l['setting_ougc_customrep_stats_profile'] = 'Mostrar estadísticas de los usuarios en sus perfiles';
+$l['setting_ougc_customrep_stats_profile_desc'] = 'Habilita esta característica para mostrar las estadísticas de reacciones dadas y recibidas en los perfiles de los usuarios.';
+$l['setting_ougc_customrep_enableajax'] = 'Habilitar Características Ajax';
+$l['setting_ougc_customrep_enableajax_desc'] = 'Habilitar las características que requieren Ajax. Tenga en cuenta que debe permitirlo en la opción "¿Activar funciones de XMLHttp request?", la cual se encuentra en los ajustes de "Servidor y opciones optimización". De lo contrario, esta función no servirá de nada';
+$l['setting_ougc_customrep_guests_popup'] = 'Permitir a los visitantes ver los Popup';
+$l['setting_ougc_customrep_guests_popup_desc'] = 'Habilita esta opción si deseas que los visitantes puedan ver las reacciones recibidas a un mensaje.';
 
 $l['setting_ougc_xthreads_information'] = '<span style="color: gray;">Para habilitar esta característica es necesario que tengas instalado <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> y crear algunos campos tal y como se muestra en la documentación.</span> <a href="https://mybb-es.com/hilo-1-8-ougc-custom-reputation-xthreads-pide-a-usuarios-reaccionar-para-mostrar-contenido">Ver guía.</a>';

@@ -167,6 +167,42 @@ function getTemplate(string $templateName = '', bool $enableHTMLComments = true)
     return $templates->render(getTemplateName($templateName), true, $enableHTMLComments);
 }
 
+function cacheUpdate(): bool
+{
+    global $db, $cache;
+
+    $cacheData = [];
+
+    $query = $db->simple_select(
+        'ougc_customrep',
+        'rid, name, image, groups, forums, firstpost, allowdeletion, customvariable, requireattach, reptype, points, ignorepoints, inmultiple, createCoreReputationType',
+        "visible='1'",
+        ['order_by' => 'disporder']
+    );
+
+    while ($rateData = $db->fetch_array($query)) {
+        $cacheData[(int)$rateData['rid']] = [
+            'name' => $rateData['name'],
+            'image' => $rateData['image'],
+            'groups' => $rateData['groups'],
+            'forums' => $rateData['forums'],
+            'firstpost' => (int)$rateData['firstpost'],
+            'allowdeletion' => (int)$rateData['allowdeletion'],
+            'customvariable' => (int)$rateData['customvariable'],
+            'requireattach' => (int)$rateData['requireattach'],
+            'reptype' => (int)$rateData['reptype'],
+            'points' => (float)$rateData['points'],
+            'ignorepoints' => (int)$rateData['ignorepoints'],
+            'inmultiple' => (int)$rateData['inmultiple'],
+            'createCoreReputationType' => (int)$rateData['createCoreReputationType'],
+        ];
+    }
+
+    $cache->update('ougc_customrep', $cacheData);
+
+    return true;
+}
+
 function reputationSync(int $userID): bool
 {
     global $db;

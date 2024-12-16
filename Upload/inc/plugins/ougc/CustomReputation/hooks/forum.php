@@ -32,7 +32,7 @@ namespace ougc\CustomReputation\Hooks\Forum;
 
 use MyBB;
 use MybbStuff_MyAlerts_AlertFormatterManager;
-use OUGC_CustomRep_AlertFormmatter;
+use ougc\CustomReputation\Core\MyAlertsFormatter;
 
 use function ougc\CustomReputation\Core\alertsIsInstalled;
 use function ougc\CustomReputation\Core\loadLanguage;
@@ -83,7 +83,7 @@ function global_start(): bool
         }
 
         $formatterManager->registerFormatter(
-            new OUGC_CustomRep_AlertFormmatter($mybb, $lang, 'ougc_customrep')
+            new MyAlertsFormatter($mybb, $lang, 'ougc_customrep')
         );
     }
 

@@ -1,0 +1,75 @@
+/***************************************************************************
+ *
+ *	OUGC Custom Reputation plugin (CSS FILE)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2012 - 2020 Omar Gonzalez
+ *
+ *	Website: https://ougc.network
+ *
+ *	Allow users rate posts with custom post reputations with rich features.
+ *
+ ***************************************************************************
+
+****************************************************************************
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+****************************************************************************/
+
+.customrep .number {
+    border: 1px solid #ccc;
+    background: #eee;
+    position: absolute;
+    z-index: 2;
+    top: -0.7em;
+    right: -1em;
+    min-width: 1.2em;
+    min-height: 1.2em;
+    padding: .2em;
+    line-height: 1;
+    text-align: center;
+    -moz-border-radius: 500rem;
+    -webkit-border-radius: 500rem;
+    border-radius: 500rem;
+    text-decoration: none !important;
+    font-weight: bolder;
+}
+
+.customrep .number.voted {
+    /*background: #fdd;*/
+}
+
+.customrep img {
+    vertical-align: middle;
+}
+
+.customrep img, .customrep i {
+    cursor: pointer;
+    line-height: 1;
+}
+
+.customrep > span {
+    display: inline-block;
+    padding: 2px 5px;
+    margin: 2px;
+    background: #eee url(images/buttons_bg.png) repeat-x;
+    border: 1px solid #ccc;
+    -moz-border-radius: 6px;
+    -webkit-border-radius: 6px;
+    border-radius: 6px;
+    position: relative;
+    margin-right: 1em;
+}
+
+.customrep, .customrep * {
+    font-size: 11px;
+}

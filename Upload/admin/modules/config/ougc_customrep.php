@@ -27,6 +27,7 @@
  ****************************************************************************/
 
 // Die if IN_MYBB is not defined, for security reasons.
+use function ougc\CustomReputation\Core\cacheUpdate;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logAdminAction;
 use function ougc\CustomReputation\Core\rateDelete;
@@ -175,7 +176,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             logAdminAction($mybb->get_input('rid', 1));
 
-            $customrep->admin_redirect($lang->$lang_var, !$customrep->update_cache());
+            $customrep->admin_redirect($lang->$lang_var);
         } else {
             $page->output_inline_error($customrep->validate_errors);
         }
@@ -357,7 +358,8 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         logAdminAction($mybb->get_input('rid', 1));
 
-        $customrep->update_cache();
+        cacheUpdate();
+
         $customrep->admin_redirect($lang->ougc_customrep_message_deleterep);
     }
 
@@ -414,7 +416,9 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             foreach ($mybb->input['disporder'] as $rid => $disporder) {
                 rateUpdate(['disporder' => $disporder], (int)$rid);
             }
-            $customrep->update_cache();
+
+            cacheUpdate();
+
             $customrep->admin_redirect();
         }
 
