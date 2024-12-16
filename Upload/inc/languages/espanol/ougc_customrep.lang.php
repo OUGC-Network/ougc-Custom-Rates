@@ -2,30 +2,29 @@
 
 /***************************************************************************
  *
- *	OUGC Custom Reputation plugin (/inc/languages/espanol/ougc_customrep.lang.php)
- *	Author: Omar Gonzalez
- *	Copyright: © 2012 - 2020 Omar Gonzalez
+ *    OUGC Custom Reputation plugin (/inc/languages/espanol/ougc_customrep.lang.php)
+ *    Author: Omar Gonzalez
+ *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
- *	Website: https://ougc.network
+ *    Website: https://ougc.network
  *
- *	Allow users rate posts with custom post reputations with rich features.
+ *    Allow users rate posts with custom post reputations with rich features.
  *
  ***************************************************************************
- 
-****************************************************************************
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-****************************************************************************/
+ ****************************************************************************
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ****************************************************************************/
 
 $l['ougc_customrep'] = 'OUGC Custom Reputation';
 
@@ -74,9 +73,9 @@ $l['ougc_customrep_profile_stats_given'] = 'Reacciones dadas.';
 $l['ougc_customrep_postbit_ignoredbit'] = 'El contenido de este mensaje ha sido ocultado debido a sus reacciones negativas.';
 
 $l['ougc_customrep_xthreads_error'] = 'Configura correctamente xThreads para que esto funcione.';
-$l['ougc_customrep_xthreads_error_user'] ='Necesitas reaccionar con un "{1}" a este mensaje para poder ver el contenido oculto.';
-$l['ougc_customrep_xthreads_error_user_any'] ='Necesitas reaccionar a este mensaje para poder ver el contenido oculto.';
-$l['ougc_customrep_xthreads_error_author'] ='Estas configurando una reacción para mostrar contenido oculto. Agrega el contenido a ocultar o desactiva esta opción para que esto no sea necesario.';
+$l['ougc_customrep_xthreads_error_user'] = 'Necesitas reaccionar con un "{1}" a este mensaje para poder ver el contenido oculto.';
+$l['ougc_customrep_xthreads_error_user_any'] = 'Necesitas reaccionar a este mensaje para poder ver el contenido oculto.';
+$l['ougc_customrep_xthreads_error_author'] = 'Estas configurando una reacción para mostrar contenido oculto. Agrega el contenido a ocultar o desactiva esta opción para que esto no sea necesario.';
 
 $l['myalerts_setting_ougc_customrep'] = 'Deseas recibir una alerta cuando alguien reaccione a tus mensajes?';
 $l['ougc_customrep_myalerts_alert'] = '{1} ha reaccionado a tu mensaje con un "{2}".';

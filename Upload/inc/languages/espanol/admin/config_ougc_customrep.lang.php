@@ -2,30 +2,29 @@
 
 /***************************************************************************
  *
- *	OUGC Custom Reputation plugin (/inc/languages/espanol/admin/config_ougc_customrep.lang.php)
- *	Author: Omar Gonzalez
- *	Copyright: © 2012 - 2020 Omar Gonzalez
+ *    OUGC Custom Reputation plugin (/inc/languages/espanol/admin/config_ougc_customrep.lang.php)
+ *    Author: Omar Gonzalez
+ *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
- *	Website: https://ougc.network
+ *    Website: https://ougc.network
  *
- *	Allow users rate posts with custom post reputations with rich features.
+ *    Allow users rate posts with custom post reputations with rich features.
  *
  ***************************************************************************
- 
-****************************************************************************
-	This program is free software: you can redistribute it and/or modify
-	it under the terms of the GNU General Public License as published by
-	the Free Software Foundation, either version 3 of the License, or
-	(at your option) any later version.
-
-	This program is distributed in the hope that it will be useful,
-	but WITHOUT ANY WARRANTY; without even the implied warranty of
-	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-	GNU General Public License for more details.
-
-	You should have received a copy of the GNU General Public License
-	along with this program.  If not, see <http://www.gnu.org/licenses/>.
-****************************************************************************/
+ ****************************************************************************
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ ****************************************************************************/
 
 $l['ougc_customrep'] = 'OUGC Custom Reputation';
 $l['ougc_customrep_d'] = 'Permite dar reputación personalizada en las publicaciones.';
@@ -40,7 +39,7 @@ $l['ougc_customrep_message_deleterep'] = 'La reacción seleccionada fue eliminad
 $l['ougc_customrep_message_empty'] = 'Actualmente no existen reacciones.';
 $l['ougc_customrep_message_addrep'] = 'La reacción ha sido añadida correctamente.';
 $l['ougc_customrep_message_editrep'] = 'La reacción ha sido editada correctamente.';
-		
+
 // Header titles
 $l['ougc_customrep_h_image'] = 'Imagen';
 $l['ougc_customrep_h_image_d'] = 'Elige una imagen para identificar esta reacción.<br/><span class="smalltext">&nbsp;&nbsp;{bburl} -> URL del foro<br />
@@ -118,7 +117,5 @@ $l['setting_ougc_enableajax'] = 'Habilitar Características Ajax';
 $l['setting_ougc_enableajax_desc'] = 'Habilitar las características que requieren Ajax. Tenga en cuenta que debe permitirlo en la opción "¿Activar funciones de XMLHttp request?", la cual se encuentra en los ajustes de "Servidor y opciones optimización". De lo contrario, esta función no servirá de nada';
 $l['setting_ougc_guests_popup'] = 'Permitir a los visitantes ver los Popup';
 $l['setting_ougc_guests_popup_desc'] = 'Habilita esta opción si deseas que los visitantes puedan ver las reacciones recibidas a un mensaje.';
-$l['setting_ougc_myalerts'] = 'Incorporar con MyAlerts';
-$l['setting_ougc_myalerts_desc'] = 'Habilita esta opción si deseas que los usuarios reciban notificaciones a través de MyAlerts.';
 
 $l['setting_ougc_xthreads_information'] = '<span style="color: gray;">Para habilitar esta característica es necesario que tengas instalado <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> y crear algunos campos tal y como se muestra en la documentación.</span> <a href="https://mybb-es.com/hilo-1-8-ougc-custom-reputation-xthreads-pide-a-usuarios-reaccionar-para-mostrar-contenido">Ver guía.</a>';

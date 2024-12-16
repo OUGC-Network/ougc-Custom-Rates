@@ -126,8 +126,6 @@ $l['setting_ougc_enableajax'] = 'Enable Ajax Features';
 $l['setting_ougc_enableajax_desc'] = 'Enable Ajax features. Please note that the "Enable XMLHttp request features?" setting under the "Server and Optimization Options" settings group needs to be turned on ("Yes") for Ajax featues to work.';
 $l['setting_ougc_guests_popup'] = 'Allow Guests to View Popup';
 $l['setting_ougc_guests_popup_desc'] = 'Enable this setting if you want to allow guests viewing rate detail modals.';
-$l['setting_ougc_myalerts'] = 'MyAlerts Support';
-$l['setting_ougc_myalerts_desc'] = 'Enable this setting allow MyAlerts support with this plugin.';
 $l['setting_ougc_multiple'] = 'Multiple Rating Global Switch';
 $l['setting_ougc_multiple_desc'] = 'Enable this setting to allow users to rate post multiple times (using different ratings).';
 

@@ -31,10 +31,12 @@ declare(strict_types=1);
 use function ougc\CustomReputation\Core\addHooks;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logDelete;
+use function ougc\CustomReputation\Core\logInsert;
 use function ougc\CustomReputation\Core\reputationSync;
 use function ougc\CustomReputation\Core\urlHandlerBuild;
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
+use const ougc\CustomReputation\Core\REPUTATION_TYPE_NONE;
 use const ougc\CustomReputation\ROOT;
 
 // Die if IN_MYBB is not defined, for security reasons.
@@ -131,7 +133,7 @@ function ougc_customrep_info()
         'compatibility' => '18*',
         'codename' => 'ougc_customrep',
         'newpoints' => '2.1.1',
-        'myalerts' => '2.0.4',
+        'myalerts' => '2.1.0',
         'pl' => [
             'version' => 13,
             'url' => 'https://community.mybb.com/mods.php?action=view&pid=573'
@@ -345,12 +347,6 @@ function ougc_customrep_activate()
         'guests_popup' => [
             'title' => $lang->setting_ougc_guests_popup,
             'description' => $lang->setting_ougc_guests_popup_desc,
-            'optionscode' => 'yesno',
-            'value' => 0,
-        ],
-        'myalerts' => [
-            'title' => $lang->setting_ougc_myalerts,
-            'description' => $lang->setting_ougc_myalerts_desc,
             'optionscode' => 'yesno',
             'value' => 0,
         ],
@@ -1876,6 +1872,8 @@ function ougc_customrep_request()
 
         $reputation['points'] = (float)$reputation['points'];
 
+        $points = 0;
+
         if ($customrep->newpoints_installed && $reputation['points']) {
             if (!($forumrules = newpoints_getrules('forum', $thread['fid']))) {
                 $forumrules['rate'] = 1;
@@ -1902,7 +1900,13 @@ function ougc_customrep_request()
             }
         }
 
-        $customrep->insert_log($reputation['rid'], $reputation['reptype'], !empty($points) ? $points : 0);
+        $insertData = [
+            'pid' => $customrep->post['pid'],
+            'rid' => $reputation['rid'],
+            'points' => $points
+        ];
+
+        logInsert($insertData, (int)$reputation['reptype']);
     }
 
     $ajax_enabled || $customrep->redirect(
@@ -2138,10 +2142,6 @@ class OUGC_CustomRep
         $this->newpoints_installed = function_exists(
                 'newpoints_addpoints'
             ) && $mybb->settings['newpoints_main_enabled'];
-
-        $this->myalerts_installed = $mybb->settings['ougc_customrep_myalerts'] && class_exists(
-                'MybbStuff_MyAlerts_AlertFormatterManager'
-            );
     }
 
     // List of tables
@@ -2664,26 +2664,6 @@ class OUGC_CustomRep
         return $this->cache['reps'][$rid];
     }
 
-    // Get a log from the DB
-    public function get_log($lid = 0)
-    {
-        $lid = (int)$lid;
-        if (!isset($this->cache['logs'][$lid])) {
-            $this->cache['logs'][$lid] = false;
-
-            global $db;
-
-            $query = $db->simple_select('ougc_customrep_log', '*', 'lid=\'' . $lid . '\'');
-            $log = $db->fetch_array($query);
-
-            if (isset($log['lid'])) {
-                $this->cache['logs'][$lid] = $log;
-            }
-        }
-
-        return $this->cache['logs'][$lid];
-    }
-
     // Ge espesific forum to affect
     public function set_forum($fid)
     {
@@ -2781,86 +2761,6 @@ class OUGC_CustomRep
         $plugins->run_hooks('ouc_customrep_delete_rep', $args);
 
         return true;
-    }
-
-    // Insert a log into the DB
-    public function insert_log($rid, $reptype = '', $points = 0, int $coreReputationID = 0) // default = disabled
-    {
-        if (!isset($rid) || !isset($this->post['pid'])) {
-            die('Invalid log insertion attempt.');
-        }
-
-        global $db, $mybb, $plugins;
-
-        $lid = (int)$db->insert_query('ougc_customrep_log', [
-            'pid' => (int)$this->post['pid'],
-            'uid' => (int)$mybb->user['uid'],
-            'rid' => (int)$rid,
-            'points' => (float)$points,
-            'dateline' => TIME_NOW,
-            'coreReputationID' => $coreReputationID,
-        ]);
-
-        $args = [
-            'this' => &$this,
-            'reptype' => &$reptype,
-            'lid' => $lid
-        ];
-
-        // MyAlerts compatibility
-        !$this->myalerts_installed || $alertTypeManager = MybbStuff_MyAlerts_AlertTypeManager::getInstance();
-
-        $plugins->run_hooks('ouc_customrep_insert_log', $args);
-
-        $reptype = (int)$reptype;
-
-        if ($reptype !== 0) {
-            global $Alerts;
-
-            $rip = (int)$db->insert_query('reputation', [
-                'pid' => (int)$this->post['pid'],
-                'uid' => (int)$this->post['uid'],
-                'adduid' => (int)$mybb->user['uid'],
-                'reputation' => $reptype,
-                'comments' => '',
-                'lid' => $lid,
-                'dateline' => TIME_NOW
-            ]);
-
-            if ($rip && $this->myalerts_installed) {
-                $alertType = $alertTypeManager->getByCode('rep');
-
-                if ($alertType != null && $alertType->getEnabled()) {
-                    $alert = new MybbStuff_MyAlerts_Entity_Alert($this->post['uid'], $alertType, 0);
-
-                    MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
-                }
-            }
-
-            if ($reptype != 0) // we don't add neutral reputations, so don't sync
-            {
-                // Recount the reputation of this user - keep it in sync.
-                reputationSync((int)$this->post['uid']);
-            }
-        }
-
-        if ($lid && $this->myalerts_installed) {
-            $alertType = $alertTypeManager->getByCode('ougc_customrep');
-
-            if ($alertType != null && $alertType->getEnabled()) {
-                $alert = new MybbStuff_MyAlerts_Entity_Alert($this->post['uid'], $alertType, $lid);
-                $alert->setExtraDetails([
-                    'pid' => $this->post['pid'],
-                    'tid' => $this->post['tid'],
-                    'fid' => $this->post['fid'],
-                    'rid' => $rid,
-                ]);
-
-                $alsert = MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
-            }
-        }
-
-        return $lid;
     }
 
     // Update a log
@@ -3006,7 +2906,7 @@ if (class_exists('MybbStuff_MyAlerts_Formatter_AbstractFormatter')) {
             $rid = (int)$alertContent['rid'];
 
             if (empty($rid)) {
-                $log = $customrep->get_log($alert->getObjectId());
+                $log = \ougc\CustomReputation\Core\logGet($alert->getObjectId());
 
                 if (!empty($log['rid'])) {
                     $rid = (int)$log['rid'];

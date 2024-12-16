@@ -34,19 +34,19 @@ use MyBB;
 use MybbStuff_MyAlerts_AlertFormatterManager;
 use OUGC_CustomRep_AlertFormmatter;
 
+use function ougc\CustomReputation\Core\alertsIsInstalled;
 use function ougc\CustomReputation\Core\loadLanguage;
-
 use function ougc\CustomReputation\Core\logDelete;
+use function ougc\CustomReputation\Core\logGet;
+use function ougc\CustomReputation\Core\logInsert;
 
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
-use const ougc\CustomReputation\Core\LINK_REPUTATION_TYPE_NONE;
 
 function global_start(): bool
 {
     global $templatelist, $mybb, $lang;
-    global $customrep;
 
     if (isset($templatelist)) {
         $templatelist .= ',';
@@ -75,7 +75,7 @@ function global_start(): bool
         }
     }
 
-    if (!empty($customrep->myalerts_installed)) {
+    if (alertsIsInstalled()) {
         $formatterManager = MybbStuff_MyAlerts_AlertFormatterManager::getInstance();
 
         if (!$formatterManager) {
@@ -200,12 +200,13 @@ function reputation_do_add_end(): bool
                 // if so, then this rate should not be inserted
             }
 
-            $logID = $customrep->insert_log(
-                $customReputationID,
-                LINK_REPUTATION_TYPE_NONE,
-                0,
-                $currentCoreReputationID
-            );
+            $insertData = [
+                'pid' => $postID,
+                'rid' => (int)$customReputationID,
+                'coreReputationID' => $currentCoreReputationID,
+            ];
+
+            $logID = logInsert($insertData);
 
             $db->update_query(
                 'reputation',
@@ -214,7 +215,7 @@ function reputation_do_add_end(): bool
             );
         } else {
             foreach ($existingCustomReputationLogs[$customReputationID] as $exitingLogID => $coreReputationID) {
-                $existingLogData = $customrep->get_log($exitingLogID);
+                $existingLogData = logGet((int)$exitingLogID);
 
                 if ($executeCustomReputation === false && !empty($existingLogData['lid'])) {
                     logDelete((int)$exitingLogID);

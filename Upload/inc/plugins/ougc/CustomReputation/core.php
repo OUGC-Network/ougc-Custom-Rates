@@ -38,7 +38,7 @@ use const ougc\CustomReputation\ROOT;
 
 const URL = 'showthread.php';
 
-const LINK_REPUTATION_TYPE_NONE = 0;
+const REPUTATION_TYPE_NONE = 0;
 
 const CORE_REPUTATION_TYPE_POSITIVE = 1;
 
@@ -167,53 +167,174 @@ function getTemplate(string $templateName = '', bool $enableHTMLComments = true)
     return $templates->render(getTemplateName($templateName), true, $enableHTMLComments);
 }
 
-function reputationSync(int $user_id): bool
+function reputationSync(int $userID): bool
 {
     global $db;
 
-    $query = $db->simple_select('reputation', 'SUM(reputation) AS reputation_count', "uid='{$user_id}'");
+    $query = $db->simple_select('reputation', 'SUM(reputation) AS totalUserReputation', "uid='{$userID}'");
 
-    $reputation_count = (int)$db->fetch_field($query, 'reputation_count');
+    $totalUserReputation = (int)$db->fetch_field($query, 'totalUserReputation');
 
-    $db->update_query('users', ['reputation' => $reputation_count], "uid='{$user_id}'");
+    $db->update_query('users', ['reputation' => $totalUserReputation], "uid='{$userID}'");
 
     return true;
 }
 
-function logDelete(int $log_id): bool
+function logGet(int $logID): array
+{
+    global $customReputationOCacheLogs;
+
+    is_array($customReputationOCacheLogs) || $customReputationOCacheLogs = [];
+
+    if (!isset($customReputationOCacheLogs[$logID])) {
+        $customReputationOCacheLogs[$logID] = [];
+
+        global $db;
+
+        $query = $db->simple_select('ougc_customrep_log', '*', "lid='{$logID}'");
+
+        $logData = $db->fetch_array($query);
+
+        if (isset($logData['lid'])) {
+            $customReputationOCacheLogs[$logID] = $logData;
+        }
+    }
+
+    return $customReputationOCacheLogs[$logID];
+}
+
+function logInsert(
+    array $logData,
+    int $reputationValue = REPUTATION_TYPE_NONE
+): int {
+    global $mybb, $plugins, $db;
+
+    $insertData = [];
+
+    if (isset($logData['pid'])) {
+        $insertData['pid'] = (int)$logData['pid'];
+    } else {
+        return 0;
+    }
+
+    $postData = get_post($insertData['pid']);
+
+    if (empty($postData['pid'])) {
+        return 0;
+    }
+
+    $postUserID = (int)$postData['uid'];
+
+    if (isset($logData['uid'])) {
+        $insertData['uid'] = (int)$logData['uid'];
+    } else {
+        $insertData['uid'] = (int)$mybb->user['uid'];
+    }
+
+    if (isset($logData['rid'])) {
+        $insertData['rid'] = (int)$logData['rid'];
+    } else {
+        return 0;
+    }
+
+    if (isset($logData['points'])) {
+        $insertData['points'] = (float)$logData['points'];
+    }
+
+    if (isset($logData['dateline'])) {
+        $insertData['dateline'] = (int)$logData['dateline'];
+    } else {
+        $insertData['dateline'] = TIME_NOW;
+    }
+
+    if (isset($logData['coreReputationID'])) {
+        $insertData['coreReputationID'] = (float)$logData['coreReputationID'];
+    }
+
+    $hookArguments = [
+        'reputationValue' => &$reputationValue,
+        'insertData' => &$insertData
+    ];
+
+    $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_start', $hookArguments);
+
+    $hookArguments['logID'] = $logID = (int)$db->insert_query('ougc_customrep_log', $insertData);
+
+    if ($reputationValue !== REPUTATION_TYPE_NONE) {
+        $hookArguments['reputationInsertData'] = $reputationInsertData = [
+            'pid' => $insertData['pid'],
+            'uid' => $postUserID,
+            'adduid' => (int)$mybb->user['uid'],
+            'reputation' => $reputationValue,
+            'comments' => '',
+            'lid' => $logID,
+            'dateline' => TIME_NOW
+        ];
+
+        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_reputation', $hookArguments);
+
+        $hookArguments['reputationID'] = $reputationID = (int)$db->insert_query('reputation', $reputationInsertData);
+
+        if ($reputationID) {
+            alertInsert($postUserID, 'rep', $insertData['pid']);
+
+            reputationSync($postUserID);
+        }
+    }
+
+    if ($logID) {
+        alertInsert($postUserID, 'ougc_customrep', $logID, [
+            'pid' => $insertData['pid'],
+            'tid' => $postData['tid'],
+            'fid' => $postData['fid'],
+            'rid' => $insertData['rid'],
+        ]);
+    }
+
+    $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_end', $hookArguments);
+
+    return $logID;
+}
+
+function logDelete(int $logID): bool
 {
     global $mybb;
     global $db, $plugins;
 
-    $reputation_delete_data = [];
+    $reputationDeleteObjects = [];
 
     $hookArguments = [
-        'log_id' => $log_id,
-        'reputation_delete_data' => &$reputation_delete_data
+        'logID' => $logID,
+        'reputationDeleteObjects' => &$reputationDeleteObjects
     ];
 
-    $query = $db->simple_select('reputation', 'rid, uid, pid', "lid='{$log_id}'");
+    $query = $db->simple_select('reputation', 'rid, uid, pid', "lid='{$logID}'");
 
-    while ($reputation_data = $db->fetch_array($query)) {
-        $reputation_delete_data[(int)$reputation_data['rid']] = [
-            'user_id' => (int)$reputation_data['uid'],
-            'post_id' => (int)$reputation_data['pid']
+    while ($reputationData = $db->fetch_array($query)) {
+        $reputationDeleteObjects[(int)$reputationData['rid']] = [
+            'userID' => (int)$reputationData['uid'],
+            'postID' => (int)$reputationData['pid']
         ];
     }
 
     $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_delete_start', $hookArguments);
 
-    foreach ($reputation_delete_data as $reputation_id => $reputation_data) {
-        $db->delete_query('reputation', "rid='{$reputation_id}'");
+    foreach ($reputationDeleteObjects as $reputationID => $reputationData) {
+        $db->delete_query('reputation', "rid='{$reputationID}'");
 
-        reputationSync($reputation_data['user_id']);
+        reputationSync($reputationData['userID']);
 
-        alertDelete($reputation_data['user_id'], (int)$mybb->user['uid'], $reputation_data['post_id']);
+        alertDelete($reputationData['userID'], (int)$mybb->user['uid'], $reputationData['postID']);
     }
 
-    $db->delete_query('ougc_customrep_log', "lid='{$log_id}'");
+    $db->delete_query('ougc_customrep_log', "lid='{$logID}'");
 
     return true;
+}
+
+function alertsIsInstalled(): bool
+{
+    return function_exists('myalerts_create_instances') && class_exists('MybbStuff_MyAlerts_AlertFormatterManager');
 }
 
 function alertsObject(): MybbStuff_MyAlerts_AlertTypeManager
@@ -234,9 +355,30 @@ function alertsObject(): MybbStuff_MyAlerts_AlertTypeManager
     return $alertTypeManager;
 }
 
-function alertDelete(int $user_id, int $from_user_id, int $post_id): bool
+function alertInsert(int $userID, string $alertType = 'rep', int $objectID = 0, array $extraDetails = []): bool
 {
-    if (!function_exists('myalerts_create_instances')) {
+    if (!alertsIsInstalled()) {
+        return false;
+    }
+
+    $alertType = alertsObject()->getByCode($alertType);
+
+    if ($alertType != null && $alertType->getEnabled()) {
+        $alert = new \MybbStuff_MyAlerts_Entity_Alert($userID, $alertType, $objectID);
+
+        if ($extraDetails) {
+            $alert->setExtraDetails($extraDetails);
+        }
+
+        \MybbStuff_MyAlerts_AlertManager::getInstance()->addAlert($alert);
+    }
+
+    return true;
+}
+
+function alertDelete(int $userID, int $fromUserID, int $objectID): bool
+{
+    if (!alertsIsInstalled()) {
         return false;
     }
 
@@ -244,10 +386,10 @@ function alertDelete(int $user_id, int $from_user_id, int $post_id): bool
 
     $alertType = alertsObject()->getByCode('rep');
 
-    if (is_int($alertType)/* && $alertType->getEnabled()*/) {
+    if (is_int($alertType) && $alertType->getEnabled()) {
         $db->delete_query(
             'alerts',
-            "uid='{$user_id}' AND from_user_id='{$from_user_id}' AND alert_type_id='{$alertType}' AND object_id='{$post_id}'"
+            "uid='{$userID}' AND from_user_id='{$fromUserID}' AND alert_type_id='{$alertType}' AND object_id='{$objectID}'"
         );
     }
 
