@@ -46,6 +46,8 @@ const CORE_REPUTATION_TYPE_NEUTRAL = 2;
 
 const CORE_REPUTATION_TYPE_NEGATIVE = 3;
 
+const POST_VISIBLE_STATUS_DRAFT = -2;
+
 function loadLanguage(): bool
 {
     global $lang;
