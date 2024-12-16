@@ -106,9 +106,6 @@ if (!defined('IN_ADMINCP') && defined('THIS_SCRIPT')) {
             $plugins->add_hook('attachment_start', 'ougc_customrep_attachment_start');
 
             // Moderation
-            $plugins->add_hook('class_moderation_delete_thread_start', 'ougc_customrep_delete_thread');
-            $plugins->add_hook('class_moderation_delete_post_start', 'ougc_customrep_delete_post');
-            $plugins->add_hook('class_moderation_merge_posts', 'ougc_customrep_merge_posts');
             #$plugins->add_hook('class_moderation_merge_threads', 'ougc_customrep_merge_threads'); // seems like posts are updated instead of "re-created", good, less work
             #$plugins->add_hook('class_moderation_split_posts', 'ougc_customrep_merge_threads'); // no sure what happens here
             break;
@@ -676,63 +673,6 @@ function ougc_customrep_member_profile_end()
     $lang->ougc_customrep_profile_stats = $lang->sprintf($lang->ougc_customrep_profile_stats, $memprofile['username']);
 
     eval('$memprofile[\'customrep\'] = "' . $templates->get('ougccustomrep_profile') . '";');
-}
-
-// Delete logs when deleting a thread
-function ougc_customrep_delete_thread(&$tid)
-{
-    global $db;
-
-    $pids = [];
-
-    // First we get a list of all posts in this thread, we need this to later get a list of logs
-    $query = $db->simple_select('posts', 'pid', 'tid=\'' . (int)$tid . '\'');
-    while ($pid = $db->fetch_field($query, 'pid')) {
-        $pids[] = (int)$pid;
-    }
-
-    if ($pids) {
-        global $customrep;
-
-        // get log ids and delete them all, this may take some time
-        $query = $db->simple_select('ougc_customrep_log', 'lid', 'pid IN (\'' . implode('\',\'', $pids) . '\')');
-        while ($lid = $db->fetch_field($query, 'lid')) {
-            logDelete((int)$lid);
-        }
-    }
-}
-
-// Delete logs upon post deletion
-function ougc_customrep_delete_post(&$pid)
-{
-    global $db;
-    global $customrep;
-
-    // get log ids and delete them all, this may take some time
-    $query = $db->simple_select('ougc_customrep_log', 'lid', 'pid=\'' . (int)$pid . '\'');
-    while ($lid = $db->fetch_field($query, 'lid')) {
-        logDelete((int)$lid);
-    }
-}
-
-// Merging post, what a pain!
-function ougc_customrep_merge_posts(&$args)
-{
-    global $db, $customrep;
-    $where = 'pid IN (\'' . implode('\',\'', array_map('intval', $args['pids'])) . '\')';
-
-    // Now get the master PID, which MyBB doesn't offer..
-    $masterpid = (int)$db->fetch_field(
-        $db->simple_select('posts', 'pid', $where, ['limit' => 1, 'order_by' => 'dateline', 'order_dir' => 'asc']),
-        'pid'
-    );
-
-    // First get all the logs attached to these posts
-    $query = $db->simple_select('ougc_customrep_log', 'lid', $where);
-    while ($lid = $db->fetch_field($query, 'lid')) {
-        // Update this log
-        logUpdate((int)$lid, ['pid' => $masterpid]);
-    }
 }
 
 // When deleting a reputation delete any log assigned to it.

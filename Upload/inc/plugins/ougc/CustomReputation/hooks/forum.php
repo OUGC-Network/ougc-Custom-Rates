@@ -40,6 +40,8 @@ use function ougc\CustomReputation\Core\logDelete;
 use function ougc\CustomReputation\Core\logGet;
 use function ougc\CustomReputation\Core\logInsert;
 
+use function ougc\CustomReputation\Core\logUpdate;
+
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
@@ -245,5 +247,71 @@ function reputation_delete_end(): bool
 
     return true;
 }
+
+function class_moderation_delete_thread_start(int &$threadID): int
+{
+    global $db;
+
+    $postIDs = [];
+
+    $query = $db->simple_select('posts', 'pid', "tid='{$threadID}'");
+
+    while ($postID = (int)$db->fetch_field($query, 'pid')) {
+        $postIDs[$postID] = 1;
+    }
+
+    if ($postIDs) {
+        $postIDs = implode("','", array_keys($postIDs));
+
+        $query = $db->simple_select('ougc_customrep_log', 'lid', "pid IN ('{$postIDs}')");
+
+        while ($logID = (int)$db->fetch_field($query, 'lid')) {
+            logDelete($logID);
+        }
+    }
+
+    return $threadID;
+}
+
+function class_moderation_delete_post_start(&$postID): int
+{
+    global $db;
+
+    $postID = (int)$postID;
+
+    $query = $db->simple_select('ougc_customrep_log', 'lid', "pid='{$postID}'");
+
+    while ($logID = (int)$db->fetch_field($query, 'lid')) {
+        logDelete($logID);
+    }
+
+    return $postID;
+}
+
+function class_moderation_merge_posts(array &$hookArguments): array
+{
+    global $db;
+
+    $postIDs = implode("','", array_map('intval', $hookArguments['pids']));
+
+    $query = $db->simple_select(
+        'posts',
+        'pid',
+        "pid IN ('{$postIDs}')",
+        ['limit' => 1, 'order_by' => 'dateline', 'order_dir' => 'asc']
+    );
+
+    $masterPostID = (int)$db->fetch_field($query, 'pid');
+
+    // First get all the logs attached to these posts
+    $query = $db->simple_select('ougc_customrep_log', 'lid', "pid IN ('{$postIDs}')");
+
+    while ($logID = (int)$db->fetch_field($query, 'lid')) {
+        logUpdate($logID, ['pid' => $masterPostID]);
+    }
+
+    return $hookArguments;
+}
+
 
 // todo, maybe allowdeletion should be checked when deleting a reputation to disable ?
