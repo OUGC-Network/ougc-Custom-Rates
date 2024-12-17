@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/class_alerts.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/class_alerts.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 Omar Gonzalez
  *

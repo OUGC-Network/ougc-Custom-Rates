@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc_customrep.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc_customrep.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *

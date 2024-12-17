@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/admin.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/admin.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
@@ -40,7 +40,6 @@ use function ougc\CustomReputation\Core\cacheUpdate;
 use function ougc\CustomReputation\Core\getSetting;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\rateInsert;
-
 use function ougc\CustomReputation\Core\urlHandlerBuild;
 
 use const ougc\CustomReputation\ROOT;
@@ -606,7 +605,7 @@ function loadPluginLibrary(): bool
             'error'
         );
 
-        admin_redirect('index.php?module=config-plugins');
+        \admin_redirect('index.php?module=config-plugins');
     }
 
     return true;
@@ -618,7 +617,7 @@ function admin_redirect(string $redirectMessage = '', bool $isError = false)
         flash_message($redirectMessage, ($isError ? 'error' : 'success'));
     }
 
-    admin_redirect(urlHandlerBuild());
+    \admin_redirect(urlHandlerBuild());
 
     exit;
 }

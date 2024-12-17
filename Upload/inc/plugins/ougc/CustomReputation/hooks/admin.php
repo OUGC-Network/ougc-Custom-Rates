@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/hooks/admin.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/hooks/admin.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
@@ -32,6 +32,7 @@ namespace ougc\CustomReputation\Hooks\Admin;
 
 use MyBB;
 
+use function admin_redirect;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logUpdate;
 

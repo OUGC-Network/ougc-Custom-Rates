@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc_customrep.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc_customrep.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
@@ -26,19 +26,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-// Die if IN_MYBB is not defined, for security reasons.
 use function ougc\CustomReputation\Core\cacheUpdate;
 use function ougc\CustomReputation\Core\loadLanguage;
 use function ougc\CustomReputation\Core\logAdminAction;
 use function ougc\CustomReputation\Core\rateDelete;
 use function ougc\CustomReputation\Core\rateGet;
 use function ougc\CustomReputation\Core\rateGetImage;
-
 use function ougc\CustomReputation\Core\rateInsert;
 use function ougc\CustomReputation\Core\rateUpdate;
-
 use function ougc\CustomReputation\Core\urlHandlerBuild;
-
 use function ougc\CustomReputation\Core\urlHandlerSet;
 
 use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
@@ -112,7 +108,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_add');
     } else {
         if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
-            \ougc\CustomReputation\Core\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
+            \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
         }
 
         $customrep->rep_data = [
@@ -262,7 +258,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             logAdminAction($mybb->get_input('rid', 1));
 
-            \ougc\CustomReputation\Core\admin_redirect($lang->$lang_var);
+            \ougc\CustomReputation\Admin\admin_redirect($lang->$lang_var);
         } else {
             $page->output_inline_error($customrep->validate_errors);
         }
@@ -436,12 +432,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     $page->output_footer();
 } elseif ($mybb->get_input('action') == 'delete') {
     if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
-        \ougc\CustomReputation\Core\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
+        \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
     }
 
     if ($mybb->request_method == 'post') {
         if (isset($mybb->input['no']) || $mybb->get_input('my_post_key') != $mybb->post_code) {
-            \ougc\CustomReputation\Core\admin_redirect();
+            \ougc\CustomReputation\Admin\admin_redirect();
         }
 
         rateDelete($mybb->get_input('rid', 1));
@@ -450,7 +446,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         cacheUpdate();
 
-        \ougc\CustomReputation\Core\admin_redirect($lang->ougc_customrep_message_deleterep);
+        \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_deleterep);
     }
 
     $page->add_breadcrumb_item($lang->delete);
@@ -509,7 +505,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             cacheUpdate();
 
-            \ougc\CustomReputation\Core\admin_redirect();
+            \ougc\CustomReputation\Admin\admin_redirect();
         }
 
         $form = new Form(urlHandlerBuild(['action' => 'updatedisporder']), 'post');

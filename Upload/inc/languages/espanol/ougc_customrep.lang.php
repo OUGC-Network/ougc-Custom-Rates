@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/languages/espanol/ougc_customrep.lang.php)
+ *    ougc Custom Reputation plugin (/inc/languages/espanol/ougc_customrep.lang.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
@@ -26,7 +26,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-$l['ougc_customrep'] = 'OUGC Custom Reputation';
+$l['ougc_customrep'] = 'ougc Custom Reputation';
 
 // Error messages
 $l['ougc_customrep_error'] = 'Error';

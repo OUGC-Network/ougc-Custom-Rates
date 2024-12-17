@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/core.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/core.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
@@ -365,7 +365,7 @@ function rateGetImage(string $rateImage, int $rateID): string
         $replaces = [
             '{bburl}' => $mybb->settings['bburl'],
             '{homeurl}' => $mybb->settings['homeurl'],
-            '{imgdir}' => $theme['imgdir']
+            '{imgdir}' => $theme['imgdir'] ?? ''
         ];
 
         $customReputationCacheImages[$rateID] = $mybb->get_asset_url(

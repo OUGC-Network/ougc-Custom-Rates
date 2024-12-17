@@ -2,7 +2,7 @@
 
 /***************************************************************************
  *
- *    OUGC Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/hooks/forum.php)
+ *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/hooks/forum.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
@@ -905,6 +905,8 @@ function postbit(array &$post): array
     $postID = (int)$post['pid'];
 
     $firstPostID = (int)$thread['firstpost'];
+
+    $post['customrep'] = $post['customrep_ignorebit'] = $post['customrep_post_visibility'] = '';
 
     if (!empty($mybb->settings['ougc_customrep_firstpost']) && $postID !== $firstPostID) {
         return $post;
