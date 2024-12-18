@@ -77,95 +77,78 @@ if ($mybb->get_input('action') == 'edit') {
 $page->add_breadcrumb_item($lang->ougc_customrep, $sub_tabs['ougc_customrep_view']['link']);
 
 if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit') {
-    $add = ($mybb->get_input('action') == 'add' ? true : false);
+    $isAddRatePage = $mybb->get_input('action') === 'add';
 
-    if ($add) {
+    $rateInputData = [
+        'name' => '',
+        'image' => '',
+        'groups' => [],
+        'forums' => [],
+        'disporder' => 0,
+        'visible' => 1,
+        'firstpost' => 1,
+        'allowdeletion' => 1,
+        'customvariable' => 0,
+        'requireattach' => 0,
+        'points' => 0,
+        'ignorepoints' => 0,
+        'inmultiple' => 0,
+        'createCoreReputationType' => 0,
+        'reptype' => '',
+    ];
+
+    if ($isAddRatePage) {
         global $db;
 
         $query = $db->simple_select('ougc_customrep', 'MAX(disporder) as max_disporder');
-        $disporder = (int)$db->fetch_field($query, 'max_disporder');
 
-        $customrep->rep_data = [
-            'name' => '',
-            'image' => '',
-            'groups' => [],
-            'forums' => [],
-            'disporder' => ++$disporder,
-            'visible' => 1,
-            'firstpost' => 1,
-            'allowdeletion' => 1,
-            'customvariable' => 0,
-            'requireattach' => 0,
-            'points' => 0,
-            'ignorepoints' => 0,
-            'inmultiple' => 0,
-            'createCoreReputationType' => 0,
-            'reptype' => '',
-        ];
+        $rateInputData['disporder'] = (int)$db->fetch_field($query, 'max_disporder') + 1;
 
         $page->add_breadcrumb_item($sub_tabs['ougc_customrep_add']['title'], $sub_tabs['ougc_customrep_add']['link']);
+
         $page->output_header($lang->ougc_customrep_tab_add);
+
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_add');
     } else {
-        if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
+        if (!($rateData = rateGet($mybb->get_input('rid', 1)))) {
             \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
         }
 
-        $customrep->rep_data = [
-            'name' => $reputation['name'],
-            'image' => $reputation['image'],
-            'groups' => explode(',', $reputation['groups']),
-            'forums' => explode(',', $reputation['forums']),
-            'disporder' => $reputation['disporder'],
-            'visible' => $reputation['visible'],
-            'firstpost' => $reputation['firstpost'],
-            'allowdeletion' => $reputation['allowdeletion'],
-            'customvariable' => $reputation['customvariable'],
-            'requireattach' => $reputation['requireattach'],
-            'points' => $reputation['points'],
-            'ignorepoints' => $reputation['ignorepoints'],
-            'inmultiple' => $reputation['inmultiple'],
-            'createCoreReputationType' => $reputation['createCoreReputationType'],
-            'reptype' => $reputation['reptype'],
-        ];
+        $rateInputData = array_merge($rateInputData, $rateData);
+
+        if (!is_array($rateInputData['groups'])) {
+            $rateInputData['groups'] = explode(',', $rateInputData['groups']);
+        }
+
+        if (!is_array($rateInputData['forums'])) {
+            $rateInputData['forums'] = explode(',', $rateInputData['forums']);
+        }
 
         $page->add_breadcrumb_item($sub_tabs['ougc_customrep_edit']['title'], $sub_tabs['ougc_customrep_edit']['link']);
+
         $page->output_header($lang->ougc_customrep_tab_edit);
+
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_edit');
     }
 
     if ($mybb->request_method == 'post') {
         foreach ($mybb->input as $key => $value) {
-            if (isset($customrep->rep_data[$key])) {
-                $customrep->rep_data[$key] = $value;
+            if (isset($rateInputData[$key])) {
+                $rateInputData[$key] = $value;
 
                 if ($key == 'groups' || $key == 'forums') {
-                    $customrep->rep_data[$key] = implode(
-                        ',',
-                        array_unique(
-                            array_map(
-                                'intval',
-                                !is_array($customrep->rep_data[$key]) ? explode(
-                                    ',',
-                                    $customrep->rep_data[$key]
-                                ) : $customrep->rep_data[$key]
-                            )
-                        )
-                    );
+                    $rateInputData[$key] = implode(',', $rateInputData[$key]);
                 }
             }
         }
     }
 
     foreach (['groups', 'forums'] as $key) {
-        if (!isset($mybb->input[$key]) && isset($reputation[$key])) {
-            if (isset($reputation[$key])) {
-                $mybb->input[$key] = $reputation[$key];
-            } else {
-                $mybb->input[$key] = '';
-            }
+        if (!isset($mybb->input[$key]) && isset($rateData[$key])) {
+            $mybb->input[$key] = $rateData[$key];
+        } else {
+            $mybb->input[$key] = '';
         }
-        unset($key);
     }
 
     $group_checked = ['all' => '', 'custom' => '', 'none' => ''];
@@ -242,56 +225,56 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         }
 
         if (empty($errors)) {
-            $customrep->rep_data['groups'] = $mybb->input['groups'];
+            $rateInputData['groups'] = $mybb->input['groups'];
 
-            $customrep->rep_data['forums'] = $mybb->input['forums'];
+            $rateInputData['forums'] = $mybb->input['forums'];
 
-            if ($add) {
-                rateInsert($customrep->rep_data);
+            if ($isAddRatePage) {
+                rateInsert($rateInputData);
 
                 $lang_var = 'ougc_customrep_message_addrep';
             } else {
-                rateUpdate($customrep->rep_data, (int)$reputation['rid']);
+                rateUpdate($rateInputData, (int)$rateData['rid']);
 
                 $lang_var = 'ougc_customrep_message_editrep';
             }
 
+            cacheUpdate();
+
             logAdminAction($mybb->get_input('rid', 1));
 
             \ougc\CustomReputation\Admin\admin_redirect($lang->$lang_var);
-        } else {
-            $page->output_inline_error($customrep->validate_errors);
         }
     }
 
     if (!empty($errors)) {
-        $page->output_inline_error($customrep->validate_errors);
+        $page->output_inline_error($errors);
     }
 
-    if ($add) {
+    if ($isAddRatePage) {
         $form = new Form(urlHandlerBuild(['action' => 'add']), 'post');
         $form_container = new FormContainer($sub_tabs['ougc_customrep_add']['title']);
     } else {
-        $form = new Form(urlHandlerBuild(['action' => 'edit', 'rid' => $reputation['rid']]), 'post');
+        $form = new Form(urlHandlerBuild(['action' => 'edit', 'rid' => $rateData['rid']]), 'post');
         $form_container = new FormContainer($sub_tabs['ougc_customrep_edit']['title']);
     }
 
     $form_container->output_row(
         $lang->ougc_customrep_h_name . ' <em>*</em>',
         $lang->ougc_customrep_h_name_d,
-        $form->generate_text_box('name', $customrep->rep_data['name'])
+        $form->generate_text_box('name', $rateInputData['name'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_image,
         $lang->ougc_customrep_h_image_d,
-        $form->generate_text_box('image', $customrep->rep_data['image'])
+        $form->generate_text_box('image', $rateInputData['image'])
     );
 
     // TODO: Allow multiple reputations (+2, -1, +n, -n)
     $form_container->output_row(
         $lang->ougc_customrep_h_reptype,
         $lang->ougc_customrep_h_reptype_d,
-        $form->generate_text_box('reptype', $customrep->rep_data['reptype'])
+        $form->generate_text_box('reptype', $rateInputData['reptype'])
     );
 
     ougc_print_selection_javascript();
@@ -363,49 +346,49 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $lang->ougc_customrep_f_disporder_d,
         $form->generate_text_box(
             'disporder',
-            $customrep->rep_data['disporder'],
+            $rateInputData['disporder'],
             ['style' => 'text-align: center; width: 30px;" maxlength="5']
         )
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_visible,
         $lang->ougc_customrep_f_visible_d,
-        $form->generate_yes_no_radio('visible', $customrep->rep_data['visible'])
+        $form->generate_yes_no_radio('visible', $rateInputData['visible'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_firstpost,
         $lang->ougc_customrep_h_firstpost_d,
-        $form->generate_yes_no_radio('firstpost', $customrep->rep_data['firstpost'])
+        $form->generate_yes_no_radio('firstpost', $rateInputData['firstpost'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_allowdeletion,
         $lang->ougc_customrep_h_allowdeletion_d,
-        $form->generate_yes_no_radio('allowdeletion', $customrep->rep_data['allowdeletion'])
+        $form->generate_yes_no_radio('allowdeletion', $rateInputData['allowdeletion'])
     );
-    $add || $form_container->output_row(
+    $isAddRatePage || $form_container->output_row(
         $lang->ougc_customrep_h_customvariable,
-        $lang->sprintf($lang->ougc_customrep_h_customvariable_d, (int)$reputation['rid']),
-        $form->generate_yes_no_radio('customvariable', $customrep->rep_data['customvariable'])
+        $lang->sprintf($lang->ougc_customrep_h_customvariable_d, (int)$rateData['rid']),
+        $form->generate_yes_no_radio('customvariable', $rateInputData['customvariable'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_requireattach,
         $lang->ougc_customrep_h_requireattach_d,
-        $form->generate_yes_no_radio('requireattach', $customrep->rep_data['requireattach'])
+        $form->generate_yes_no_radio('requireattach', $rateInputData['requireattach'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_points,
         $lang->ougc_customrep_h_points_d,
-        $form->generate_text_box('points', $customrep->rep_data['points'])
+        $form->generate_text_box('points', $rateInputData['points'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_ignorepoints,
         $lang->ougc_customrep_h_ignorepoints_d,
-        $form->generate_text_box('ignorepoints', $customrep->rep_data['ignorepoints'])
+        $form->generate_text_box('ignorepoints', $rateInputData['ignorepoints'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_inmultiple,
         $lang->ougc_customrep_h_inmultiple_d,
-        $form->generate_yes_no_radio('inmultiple', $customrep->rep_data['inmultiple'])
+        $form->generate_yes_no_radio('inmultiple', $rateInputData['inmultiple'])
     );
     $form_container->output_row(
         $lang->ougc_customrep_h_createCoreReputationType,
@@ -415,7 +398,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             CORE_REPUTATION_TYPE_POSITIVE => $lang->ougc_customrep_h_createCoreReputationTypePositive,
             CORE_REPUTATION_TYPE_NEUTRAL => $lang->ougc_customrep_h_createCoreReputationTypeNeutral,
             CORE_REPUTATION_TYPE_NEGATIVE => $lang->ougc_customrep_h_createCoreReputationTypeNegative,
-        ], $customrep->rep_data['createCoreReputationType'])
+        ], $rateInputData['createCoreReputationType'])
     );
 
     $form_container->end();
@@ -431,7 +414,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
     $page->output_footer();
 } elseif ($mybb->get_input('action') == 'delete') {
-    if (!($reputation = rateGet($mybb->get_input('rid', 1)))) {
+    if (!($rateData = rateGet($mybb->get_input('rid', 1)))) {
         \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
     }
 
@@ -510,36 +493,36 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         $form = new Form(urlHandlerBuild(['action' => 'updatedisporder']), 'post');
 
-        while ($reputation = $db->fetch_array($query)) {
+        while ($rateData = $db->fetch_array($query)) {
             if ($mybb->settings['ougc_customrep_fontawesome']) {
-                $image = '<i class="' . $reputation['image'] . '" aria-hidden="true"></i>';
+                $image = '<i class="' . $rateData['image'] . '" aria-hidden="true"></i>';
             } else {
                 $image = '<img src="' . rateGetImage(
-                        $reputation['image'],
-                        (int)$reputation['rid']
+                        $rateData['image'],
+                        (int)$rateData['rid']
                     ) . '" />';
             }
 
-            $link = urlHandlerBuild(['action' => 'edit', 'rid' => $reputation['rid']]);
+            $link = urlHandlerBuild(['action' => 'edit', 'rid' => $rateData['rid']]);
 
             $table->construct_cell($image, ['class' => 'align_center']);
-            $table->construct_cell("<a href='{$link}'>" . htmlspecialchars_uni($reputation['name']) . '</a>');
+            $table->construct_cell("<a href='{$link}'>" . htmlspecialchars_uni($rateData['name']) . '</a>');
             $table->construct_cell(
                 $form->generate_text_box(
-                    'disporder[' . $reputation['rid'] . ']',
-                    (int)$reputation['disporder'],
+                    'disporder[' . $rateData['rid'] . ']',
+                    (int)$rateData['disporder'],
                     ['style' => 'text-align: center; width: 30px;']
                 ),
                 ['class' => 'align_center']
             );
 
-            $table->construct_cell(($reputation['visible'] ? $lang->yes : $lang->no), ['class' => 'align_center']);
+            $table->construct_cell(($rateData['visible'] ? $lang->yes : $lang->no), ['class' => 'align_center']);
 
-            $popup = new PopupMenu('rep_' . $reputation['rid'], $lang->options);
+            $popup = new PopupMenu('rep_' . $rateData['rid'], $lang->options);
             $popup->add_item($lang->ougc_customrep_tab_edit, $link);
             $popup->add_item(
                 $lang->delete,
-                urlHandlerBuild(['action' => 'delete', 'rid' => $reputation['rid']])
+                urlHandlerBuild(['action' => 'delete', 'rid' => $rateData['rid']])
             );
             $table->construct_cell($popup->fetch(), ['class' => 'align_center']);
 

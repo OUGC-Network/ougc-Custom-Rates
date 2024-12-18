@@ -114,13 +114,13 @@ function global_start(): bool
 
 function reputation_do_add_process(): bool
 {
-    global $reputation, $existing_reputation;
+    global $rateData, $existing_reputation;
 
-    if (empty($reputation['pid'])) {
+    if (empty($rateData['pid'])) {
         return false;
     }
 
-    $postID = (int)$reputation['pid'];
+    $postID = (int)$rateData['pid'];
 
     $postData = get_post($postID);
 
@@ -302,6 +302,9 @@ function forumdisplay_thread(): bool
 
     $font_awesome = &$fontAwesomeCode;
 
+    $customThreadFieldsVariables = $customThreadFieldsHideSkip = $customThreadFieldsVariablesEditPost = '';
+    $xthreads_variables = $xthreads_hideskip = $xthreads_variables_editpost = '';
+
     $footer .= eval(getTemplate('headerinclude'));
 
     $postsIDs = [];
@@ -433,6 +436,7 @@ function portal_announcement(): bool
         $font_awesome = &$fontAwesomeCode;
 
         $customThreadFieldsVariables = $customThreadFieldsHideSkip = $customThreadFieldsVariablesEditPost = '';
+        $xthreads_variables = $xthreads_hideskip = $xthreads_variables_editpost = '';
 
         $footer .= eval(getTemplate('headerinclude'));
     }
@@ -545,7 +549,7 @@ function showthread_start09()
 
     $postUserID = (int)($post['uid'] ?? 0);
 
-    $postThreadID = (int)($post['uid'] ?? 0);
+    $postThreadID = (int)($post['tid'] ?? 0);
 
     $firstPostOnly = !empty($mybb->settings['ougc_customrep_firstpost']) || !empty($rateData['firstpost']);
 
@@ -900,7 +904,7 @@ function showthread_start09()
 function postbit(array &$post): array
 {
     global $mybb;
-    global $fid, $tid, $templates, $thread;
+    global $fid, $templates, $thread;
 
     $postID = (int)$post['pid'];
 
@@ -909,10 +913,6 @@ function postbit(array &$post): array
     $post['customrep'] = $post['customrep_ignorebit'] = $post['customrep_post_visibility'] = '';
 
     if (!empty($mybb->settings['ougc_customrep_firstpost']) && $postID !== $firstPostID) {
-        return $post;
-    }
-
-    if (!empty($mybb->settings['ougc_customrep_firstpost'])) {
         return $post;
     }
 
@@ -956,6 +956,9 @@ function postbit(array &$post): array
         }
 
         $xthreads_variables = &$customThreadFieldsVariables;
+
+        $customThreadFieldsHideSkip = $customThreadFieldsVariablesEditPost = '';
+        $xthreads_hideskip = $xthreads_variables_editpost = '';
 
         $footer .= eval(getTemplate('headerinclude'));
 
@@ -1118,7 +1121,13 @@ function member_profile_end(): bool
                 continue;
             }
 
-            $rateName = $rateTitleText = $lang_val = htmlspecialchars_uni(rateGetName($rateID) ?? $rateData['name']);
+            if (!($rateName = rateGetName($rateID))) {
+                $rateName = htmlspecialchars_uni($rateData['name']);
+            } else {
+                $rateName = htmlspecialchars_uni($rateName);
+            }
+
+            $rateTitleText = $lang_val = $rateName;
 
             $totalReceivedRates = $number = my_number_format($buildParams['statsCache'][$rateID]);
 

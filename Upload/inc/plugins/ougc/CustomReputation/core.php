@@ -784,10 +784,9 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
     $ratesListCode = '';
 
-    // Has this current user voted for this custom reputation?
-    $voted = false;
+    $currentUserVoted = false;
 
-    $voted_rids = $firstpost_only = $unique_rids = [];
+    $ratesVotedFor = $ratesFirstPostOnly = $ratesMultipleAllowed = [];
 
     global $customReputationCacheQuery;
 
@@ -795,20 +794,20 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
     foreach ($forumRatesCache as $rateID => $rateData) {
         if (!empty($rateData['firstpost'])) {
-            $firstpost_only[$rateID] = $rateID;
+            $ratesFirstPostOnly[$rateID] = $rateID;
         }
 
         if (empty($rateData['inmultiple'])) {
-            $unique_rids[$rateID] = $rateID;
+            $ratesMultipleAllowed[$rateID] = $rateID;
         }
 
         if (isset($customReputationCacheQuery[$rateID][$postID])) {
             //TODO
             foreach ($customReputationCacheQuery[$rateID][$postID] as $votes) {
                 if (isset($votes[$mybb->user['uid']])) {
-                    $voted_rids[$rateID] = $rateID;
+                    $ratesVotedFor[$rateID] = $rateID;
 
-                    $voted = true;
+                    $currentUserVoted = true;
                 }
             }
         }
@@ -816,15 +815,15 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
     unset($rateID, $rateData);
 
-    global $templates, $lang;
+    global $lang;
 
     loadLanguage();
 
     $post_url = get_post_link($postID, $postData['tid']);
 
-    $input = [
+    $inputParams = [
         'pid' => $postID,
-        'my_post_key' => (isset($mybb->post_code) ? $mybb->post_code : generate_post_check()),
+        'my_post_key' => $mybb->post_code,
     ];
 
     $ajaxIsEnabled = $mybb->settings['use_xmlhttprequest'] && $mybb->settings['ougc_customrep_enableajax'];
@@ -833,29 +832,34 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
         $lang->ougc_customrep_viewlatest = $lang->ougc_customrep_viewlatest_noajax;
     }
 
-    foreach ($forumRatesCache as $rateID => $reputation) {
-        if (!is_member($reputation['forums'], ['usergroup' => $forumID, 'additionalgroups' => '']
-        )) {
+    foreach ($forumRatesCache as $rateID => $rateData) {
+        if (
+            !is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])
+        ) {
             continue;
         }
 
-        // $firstpost_only[$rateID] stores the tid
+        // $ratesFirstPostOnly[$rateID] stores the tid
         // $threadData['firstpost'] is only set on post bit, since portal and thread list posts are indeed the first post
-        if (!empty($firstpost_only[$rateID]) && !empty($threadData['firstpost']) && (int)$threadData['firstpost'] !== $postID) {
+        if (!empty($ratesFirstPostOnly[$rateID]) && !empty($threadData['firstpost']) && (int)$threadData['firstpost'] !== $postID) {
             continue;
         }
 
-        $rateName = htmlspecialchars_uni(rateGetName($rateID) ?? $reputation['name']);
+        if (!($rateName = rateGetName($rateID))) {
+            $rateName = htmlspecialchars_uni($rateData['name']);
+        } else {
+            $rateName = htmlspecialchars_uni($rateName);
+        }
 
-        $input['action'] = 'customReputation';
+        $inputParams['action'] = 'customReputation';
 
-        $input['rid'] = $rateID;
+        $inputParams['rid'] = $rateID;
 
-        $addDeleteUrl = urlHandlerBuild($input);
+        $addDeleteUrl = urlHandlerBuild($inputParams);
 
-        $input['action'] = 'customReputationPopUp';
+        $inputParams['action'] = 'customReputationPopUp';
 
-        $ratePopUpUrl = $popupurl = urlHandlerBuild($input);
+        $ratePopUpUrl = $popupurl = urlHandlerBuild($inputParams);
 
         $totalReceivedRates = 0;
 
@@ -864,8 +868,8 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
         if ($ajaxIsEnabled) {
             $addDeleteUrl = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '0');";
 
-            if (!empty($mybb->settings['ougc_customrep_delete']) && $reputation['allowdeletion']) {
-                $link_delete = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '1');";
+            if (!empty($mybb->settings['ougc_customrep_delete']) && $rateData['allowdeletion']) {
+                $deleteUrl = "javascript:OUGC_CustomReputation.Add('{$postData['tid']}', '{$postID}', '{$mybb->post_code}', '{$rateID}', '1');";
             }
         }
 
@@ -876,23 +880,23 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
         $totalReceivedRates = my_number_format($totalReceivedRates);
 
-        $voted_this = false;
+        $currentUserVotedThis = false;
 
-        if (isset($voted_rids[$rateID])) {
-            $voted_this = true;
+        if (isset($ratesVotedFor[$rateID])) {
+            $currentUserVotedThis = true;
         }
 
         $userRatedThisClass = '';
 
-        if ($voted_this) {
+        if ($currentUserVotedThis) {
             $userRatedThisClass = 'voted';
         }
 
         $voted_class = &$userRatedThisClass;
 
-        $totalReceivedRates = eval(getTemplate('rep_number', false));
-
         $number = &$totalReceivedRates;
+
+        $totalReceivedRates = eval(getTemplate('rep_number', false));
 
         $imageTemplateName = 'rep_img';
 
@@ -902,25 +906,31 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
         $rateTitleText = '';
 
+        $rateImage = rateGetImage($rateData['image'], $rateID);
+
         $lang_val = &$rateTitleText;
 
         $rid = &$rateID;
 
         $image = &$rateImage;
 
-        $can_vote = is_member($reputation['groups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
+        $isAllowedToVote = is_member($rateData['groups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
 
-        if ($voted && $voted_this) {
-            $can_vote = false;
+        $reputation = ['name' => $rateName, 'image' => $rateImage]; // to remove later
 
-            if (!empty($mybb->settings['ougc_customrep_delete']) && $reputation['allowdeletion']) {
-                $addDeleteUrl = $ajaxIsEnabled ? $link_delete : $addDeleteUrl . '&amp;delete=1';
+        if ($currentUserVoted && $currentUserVotedThis) {
+            $isAllowedToVote = false;
+
+            if (!empty($mybb->settings['ougc_customrep_delete']) && $rateData['allowdeletion']) {
+                $addDeleteUrl = $ajaxIsEnabled ? $deleteUrl : $addDeleteUrl . '&amp;delete=1';
 
                 $link = &$addDeleteUrl;
 
                 $rateExtraClass = '_delete';
 
                 $classextra = $rateExtraClass;
+
+                $rateName .= '--Voted';
 
                 $rateTitleText = $lang->sprintf($lang->ougc_customrep_delete, $rateName);
 
@@ -932,9 +942,9 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
                 $rateImage = eval(getTemplate($imageTemplateName, false));
             }
-        } elseif ($can_vote && ($reputation['inmultiple'] || !(isset($unique_rids[$rateID]) && array_intersect(
-                        $unique_rids,
-                        $voted_rids
+        } elseif ($isAllowedToVote && ($rateData['inmultiple'] || !(isset($ratesMultipleAllowed[$rateID]) && array_intersect(
+                        $ratesMultipleAllowed,
+                        $ratesVotedFor
                     )))) {
             $link = &$addDeleteUrl;
 
@@ -950,6 +960,7 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
             $rateImage = eval(getTemplate($imageTemplateName, false));
         }
+
         /*
         {
             $rateTitleText = $lang->ougc_customrep_voted_undo;
@@ -959,7 +970,7 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
         $rateCode = eval(getTemplate('rep', false));
 
-        if (!empty($reputation['customvariable']) || $setRateID && $setRateID === (int)$rateID) {
+        if (!empty($rateData['customvariable']) || $setRateID && $setRateID === (int)$rateID) {
             $postThreadObject['customrep_' . $rateID] = $rateCode;
             /*if($setRateID)
             {
@@ -967,11 +978,10 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
             }*/
         }
 
-        if (empty($reputation['customvariable'])) {
+        if (empty($rateData['customvariable'])) {
             $ratesListCode .= $rateCode;
         }
     }
-    unset($rateID, $reputation);
 
     /*if($setRateID)
     {
