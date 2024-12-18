@@ -969,6 +969,8 @@ function postbit(array &$post): array
                 ) >= $ignorePointsThreshold) {
                 global $lang, $ignored_message, $ignore_bit, $post_visibility;
 
+                loadLanguage();
+                
                 $ignored_message = $lang->sprintf($lang->ougc_customrep_postbit_ignoredbit, $post['username']);
 
                 $post['customrep_ignorebit'] = eval($templates->render('postbit_ignored'));
@@ -1244,11 +1246,13 @@ function attachment_start(): bool
     $requiredRatesIDs = [];
 
     foreach ($ratesCache as $rateID => $rateData) {
+        $firstPostOnly = !empty($mybb->settings['ougc_customrep_firstpost']) || !empty($rateData['firstpost']);
+
         if (
             !empty($rateData['requireattach']) &&
             is_member($rateData['groups']) &&
             is_member($rateData['forums'], ['usergroup' => $thread['fid'], 'additionalgroups' => '']) &&
-            (!$isFirstPost || !empty($rateData['firstpost']))
+            ($isFirstPost || !$firstPostOnly)
         ) {
             $requiredRatesIDs[(int)$rateID] = 1;
         }
