@@ -28,30 +28,30 @@
 
 declare(strict_types=1);
 
-use function ougc\CustomReputation\Admin\pluginActivate;
-use function ougc\CustomReputation\Admin\pluginDeactivate;
-use function ougc\CustomReputation\Admin\pluginInfo;
-use function ougc\CustomReputation\Admin\pluginInstall;
-use function ougc\CustomReputation\Admin\pluginIsInstalled;
-use function ougc\CustomReputation\Admin\pluginUninstall;
-use function ougc\CustomReputation\Core\addHooks;
-use function ougc\CustomReputation\Core\cacheUpdate;
-use function ougc\CustomReputation\Core\getTemplate;
-use function ougc\CustomReputation\Core\loadLanguage;
+use function ougc\CustomRates\Admin\pluginActivate;
+use function ougc\CustomRates\Admin\pluginDeactivate;
+use function ougc\CustomRates\Admin\pluginInfo;
+use function ougc\CustomRates\Admin\pluginInstall;
+use function ougc\CustomRates\Admin\pluginIsInstalled;
+use function ougc\CustomRates\Admin\pluginUninstall;
+use function ougc\CustomRates\Core\addHooks;
+use function ougc\CustomRates\Core\cacheUpdate;
+use function ougc\CustomRates\Core\getTemplate;
+use function ougc\CustomRates\Core\loadLanguage;
 
-use const ougc\CustomReputation\ROOT;
+use const ougc\CustomRates\ROOT;
 
 defined('IN_MYBB') || die('This file cannot be accessed directly.');
 
 // You can uncomment the lines below to avoid storing some settings in the DB
-define('ougc\CustomReputation\Core\SETTINGS', [
+define('ougc\CustomRates\Core\SETTINGS', [
     //'key' => 'value',
     'myAlertsVersion' => '2.1.0'
 ]);
 
 define('ougc\CustomReputation\Core\DEBUG', false);
 
-define('ougc\CustomReputation\ROOT', constant('MYBB_ROOT') . 'inc/plugins/ougc/CustomReputation');
+define('ougc\CustomRates\ROOT', constant('MYBB_ROOT') . 'inc/plugins/ougc/CustomReputation');
 
 require_once ROOT . '/core.php';
 
@@ -59,16 +59,16 @@ if (defined('IN_ADMINCP')) {
     require_once ROOT . '/admin.php';
     require_once ROOT . '/hooks/admin.php';
 
-    addHooks('ougc\CustomReputation\Hooks\Admin');
+    addHooks('ougc\CustomRates\Hooks\Admin');
 } else {
     require_once ROOT . '/hooks/forum.php';
 
-    addHooks('ougc\CustomReputation\Hooks\Forum');
+    addHooks('ougc\CustomRates\Hooks\Forum');
 }
 
 require_once ROOT . '/hooks/shared.php';
 
-addHooks('ougc\CustomReputation\Hooks\Shared');
+addHooks('ougc\CustomRates\Hooks\Shared');
 
 defined('PLUGINLIBRARY') || define('PLUGINLIBRARY', MYBB_ROOT . 'inc/plugins/pluginlibrary.php');
 
