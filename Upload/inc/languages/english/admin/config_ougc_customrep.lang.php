@@ -55,6 +55,7 @@ $l['ougc_customrep_h_visible'] = 'Visible';
 $l['ougc_customrep_perm'] = 'Can manage custom rates?';
 
 // Tabs
+$l['ougc_custom_rates_admin_menu'] = 'Custom Rates';
 $l['ougc_customrep_tab_view'] = 'View All';
 $l['ougc_customrep_tab_view_d'] = 'List of existing ratings.';
 $l['ougc_customrep_tab_add'] = 'Add';
@@ -83,8 +84,6 @@ $l['ougc_customrep_h_requireattach'] = 'Require to Download Attachments';
 $l['ougc_customrep_h_requireattach_d'] = 'Enable this feature to require users to rate a post before downloading attachments.';
 $l['ougc_customrep_h_reptype'] = 'Reputation Level';
 $l['ougc_customrep_h_reptype_d'] = 'How does this custom rate affect users\'s reputation. Empty to disable.';
-$l['ougc_customrep_h_points'] = 'Newpoints Points Cost';
-$l['ougc_customrep_h_points_d'] = 'Please note that the post author receives the points and points are reverted if the rating is deleted.';
 $l['ougc_customrep_h_ignorepoints'] = 'Hide Post On Count';
 $l['ougc_customrep_h_ignorepoints_d'] = 'Posts can be hidden by default if they reach an amount of rates. Please insert the amount of rates needed for posts to be hidden by default.';
 $l['ougc_customrep_h_inmultiple'] = 'Allow in Multiple';

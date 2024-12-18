@@ -35,9 +35,6 @@ use MybbStuff_MyAlerts_AlertFormatterManager;
 use ougc\CustomReputation\Core\MyAlertsFormatter;
 use postParser;
 
-use function Newpoints\Core\points_add_simple;
-use function Newpoints\Core\points_format;
-use function Newpoints\Core\points_substract;
 use function ougc\CustomReputation\Core\alertsIsInstalled;
 use function ougc\CustomReputation\Core\forumGetRates;
 use function ougc\CustomReputation\Core\getTemplate;
@@ -49,7 +46,6 @@ use function ougc\CustomReputation\Core\logInsert;
 use function ougc\CustomReputation\Core\logUpdate;
 use function ougc\CustomReputation\Core\modalRender;
 use function ougc\CustomReputation\Core\modalRenderError;
-use function ougc\CustomReputation\Core\newPointsIsInstalled;
 use function ougc\CustomReputation\Core\outputAjaxData;
 use function ougc\CustomReputation\Core\postRatesParse;
 use function ougc\CustomReputation\Core\rateGet;
@@ -114,13 +110,19 @@ function global_start(): bool
 
 function reputation_do_add_process(): bool
 {
-    global $rateData, $existing_reputation;
+    global $existing_reputation;
 
-    if (empty($rateData['pid'])) {
+    if (!empty($existing_reputation['uid'])) {
         return false;
     }
 
-    $postID = (int)$rateData['pid'];
+    global $reputation;
+
+    if (empty($reputation['pid'])) {
+        return false;
+    }
+
+    $postID = (int)$reputation['pid'];
 
     $postData = get_post($postID);
 
@@ -128,40 +130,44 @@ function reputation_do_add_process(): bool
         return false;
     }
 
-    global $mybb, $db;
+    global $mybb, $db, $plugins;
+    global $customReputationObjects, $existingCustomReputationLogs;
+
+    $customReputationObjects = [];
+
+    $hookArguments = [];
 
     $userID = (int)$mybb->user['uid'];
 
     $threadData = get_thread($postData['tid']);
 
-    global $customReputationObjects, $existingCustomReputationLogs;
+    foreach ((array)$mybb->cache->read('ougc_customrep') as $rateID => $rateData) {
+        $hookArguments['rateData'] = &$rateData;
 
-    $customReputationObjects = [];
+        $hookArguments = $plugins->run_hooks('ougc_custom_rates_reputation_add_process_start', $hookArguments);
 
-    foreach ($mybb->cache->read('ougc_customrep') as $customReputationID => $customReputationData) {
-        if (empty($customReputationData['createCoreReputationType']) || !is_member(
-                $customReputationData['groups']
-            ) || !is_member(
-                $customReputationData['forums'],
-                ['usergroup' => $postData['fid'], 'additionalgroups' => '']
-            ) || (!empty($customReputationData['firstpost']) && $postID !== (int)$threadData['firstpost'])/* || (!empty($customReputationData['points']) && (float)$mybb->user['newpoints'] < (float)$customReputationData['points'])*/) {
+        if (
+            empty($rateData['createCoreReputationType']) ||
+            !is_member($rateData['groups']) ||
+            !is_member($rateData['forums'], ['usergroup' => $postData['fid'], 'additionalgroups' => '']) ||
+            (!empty($rateData['firstpost']) && $postID !== (int)$threadData['firstpost'])
+        ) {
             continue;
-            // todo, currently ignores the newpoints setting
         }
 
-        $customReputationObjects[$customReputationID] = [
-            //'allowdeletion' => $customReputationData['allowdeletion'],
-            'inmultiple' => $customReputationData['inmultiple'],
-            'createCoreReputationType' => $customReputationData['createCoreReputationType'],
+        $customReputationObjects[$rateID] = [
+            //'allowdeletion' => $rateData['allowdeletion'],
+            'inmultiple' => $rateData['inmultiple'],
+            'createCoreReputationType' => $rateData['createCoreReputationType'],
         ];
     }
 
-    $customReputationIDs = implode("','", array_keys($customReputationObjects));
+    $rateIDs = implode("','", array_keys($customReputationObjects));
 
     $dbQuery = $db->simple_select(
         'ougc_customrep_log',
         'lid, rid, coreReputationID',
-        "pid='{$postID}' AND uid='{$userID}' AND rid IN ('{$customReputationIDs}')"
+        "pid='{$postID}' AND uid='{$userID}' AND rid IN ('{$rateIDs}')"
     );
 
     $existingCustomReputationLogs = [];
@@ -181,10 +187,8 @@ function reputation_do_add_end(): bool
     global $uid, $existing_reputation;
     global $customReputationObjects, $existingCustomReputationLogs;
 
-    $isExistingReputation = !empty($existing_reputation['uid']);
-
-    if ($isExistingReputation) {
-        //return false;
+    if (!empty($existing_reputation['uid'])) {
+        return false;
     }
 
     $userID = (int)$mybb->user['uid'];
@@ -201,30 +205,30 @@ function reputation_do_add_end(): bool
 
     $currentCoreReputationID = (int)$db->fetch_field($dbQuery, 'rid');
 
-    foreach ($customReputationObjects as $customReputationID => $customReputationData) {
+    foreach ($customReputationObjects as $rateID => $rateData) {
         $executeCustomReputation = false;
 
-        if ((int)$customReputationData['createCoreReputationType'] === CORE_REPUTATION_TYPE_POSITIVE && $reputationValue > 0) {
+        if ((int)$rateData['createCoreReputationType'] === CORE_REPUTATION_TYPE_POSITIVE && $reputationValue > 0) {
             $executeCustomReputation = $reputationValue;
-        } elseif ((int)$customReputationData['createCoreReputationType'] === CORE_REPUTATION_TYPE_NEUTRAL && $reputationValue === 0) {
+        } elseif ((int)$rateData['createCoreReputationType'] === CORE_REPUTATION_TYPE_NEUTRAL && $reputationValue === 0) {
             $executeCustomReputation = 0;
-        } elseif ((int)$customReputationData['createCoreReputationType'] === CORE_REPUTATION_TYPE_NEGATIVE && $reputationValue < 0) {
+        } elseif ((int)$rateData['createCoreReputationType'] === CORE_REPUTATION_TYPE_NEGATIVE && $reputationValue < 0) {
             $executeCustomReputation = $reputationValue;
         }
 
-        if (!isset($existingCustomReputationLogs[$customReputationID])) {
+        if (!isset($existingCustomReputationLogs[$rateID])) {
             if ($executeCustomReputation === false) {
                 continue;
             }
 
-            if (empty($customReputationData['inmultiple'])) {
+            if (empty($rateData['inmultiple'])) {
                 // todo, check if there are existing rates which don't allow in multiple
                 // if so, then this rate should not be inserted
             }
 
             $insertData = [
                 'pid' => $postID,
-                'rid' => (int)$customReputationID,
+                'rid' => (int)$rateID,
                 'coreReputationID' => $currentCoreReputationID,
             ];
 
@@ -236,7 +240,7 @@ function reputation_do_add_end(): bool
                 "rid='{$currentCoreReputationID}'"
             );
         } else {
-            foreach ($existingCustomReputationLogs[$customReputationID] as $exitingLogID => $coreReputationID) {
+            foreach ($existingCustomReputationLogs[$rateID] as $exitingLogID => $coreReputationID) {
                 $existingLogData = logGet((int)$exitingLogID);
 
                 if ($executeCustomReputation === false && !empty($existingLogData['lid'])) {
@@ -507,7 +511,7 @@ function showthread_start09()
     }
 
     global $templates, $lang;
-    global $tid, $thread, $fid;
+    global $tid, $thread, $fid, $errorFunction;
 
     loadLanguage();
 
@@ -724,7 +728,7 @@ function showthread_start09()
 
         $query = $db->simple_select(
             'ougc_customrep_log',
-            'points, uid, lid',
+            'uid, lid',
             "pid='{$postID}' AND uid='{$mybb->user['uid']}' AND rid='{$rateID}'"
         );
 
@@ -733,26 +737,6 @@ function showthread_start09()
         }
 
         while ($logData = $db->fetch_array($query)) {
-            $logPoints = (float)$logData['points'];
-
-            if (newPointsIsInstalled() && !empty($logPoints)) {
-                $postUserData = get_user($postUserID);
-
-                if ($logPoints > $postUserData['newpoints']) {
-                    $errorFunction(
-                        $lang->sprintf(
-                            $lang->ougc_customrep_error_points_author,
-                            htmlspecialchars_uni($postUserData['username']),
-                            points_format($logPoints)
-                        )
-                    );
-                }
-
-                points_substract($postUserID, $logPoints);
-
-                points_add_simple((int)$logData['uid'], $logPoints);
-            }
-
             logDelete((int)$logData['lid']);
         }
     } else {
@@ -818,39 +802,9 @@ function showthread_start09()
             $errorFunction($lang->ougc_customrep_error_multiple);
         }
 
-        $rateData['points'] = (float)$rateData['points'];
-
-        $points = 0;
-
-        if (newPointsIsInstalled() && $rateData['points']) {
-            if (!($forumrules = newpoints_getrules('forum', $thread['fid']))) {
-                $forumrules['rate'] = 1;
-            }
-
-            if (!($grouprules = newpoints_getrules('group', $mybb->user['usergroup']))) {
-                $grouprules['rate'] = 1;
-            }
-
-            if ($forumrules['rate'] && $grouprules['rate']) {
-                $points = round(
-                    $rateData['points'] * $forumrules['rate'] * $grouprules['rate'],
-                    (int)$mybb->settings['newpoints_main_decimal']
-                );
-
-                if ($points > $mybb->user['newpoints']) {
-                    $errorFunction($lang->sprintf($lang->ougc_customrep_error_points, points_format($points)));
-                } else {
-                    points_add_simple($postUserID, $points);
-
-                    points_substract((int)$mybb->user['uid'], $points);
-                }
-            }
-        }
-
         $insertData = [
             'pid' => $postID,
-            'rid' => $rateID,
-            'points' => $points
+            'rid' => $rateID
         ];
 
         logInsert($insertData, (int)$rateData['reptype']);

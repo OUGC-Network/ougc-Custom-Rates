@@ -106,11 +106,6 @@ const TABLES_DATA = [
             'size' => 3,
             'default' => ''
         ],
-        'points' => [
-            'type' => 'DECIMAL',
-            'size' => '16,2',
-            'default' => 0
-        ],
         'ignorepoints' => [
             'type' => 'TINYINT',
             'unsigned' => true,
@@ -147,11 +142,6 @@ const TABLES_DATA = [
         'rid' => [
             'type' => 'INT',
             'unsigned' => true,
-            'default' => 0
-        ],
-        'points' => [
-            'type' => 'DECIMAL',
-            'size' => '16,2',
             'default' => 0
         ],
         'coreReputationID' => [
@@ -202,7 +192,6 @@ function pluginInfo(): array
         'versioncode' => 1822,
         'compatibility' => '18*',
         'codename' => 'ougc_customrep',
-        'newpoints' => '2.1.1',
         'myalerts' => getSetting('myAlertsVersion'),
         'pl' => [
             'version' => 13,

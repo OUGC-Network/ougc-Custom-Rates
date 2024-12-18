@@ -44,7 +44,6 @@ $l['ougc_customrep_error_invalidrep'] = 'Tipo de reacción inválida.';
 $l['ougc_customrep_error_invalidrating'] = 'Estás tratando de eliminar una reacción que no existe.';
 $l['ougc_customrep_error_multiple'] = 'No se permite reaccionar dos veces al mismo mensaje.';
 $l['ougc_customrep_error_points'] = 'No tienes puntos suficientes para utilizar la reacción seleccionada. Necesitas {1} puntos para poder utilizarla.';
-$l['ougc_customrep_error_points_author'] = '{1} no tiene suficientes puntos para deshacer esta reacción. {1} necesita {2} puntos para que puedas deshacer esta reacción.';
 
 // Misc page
 $l['ougc_customrep_viewall'] = 'Ver quien reaccionó a esto.';

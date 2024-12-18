@@ -171,19 +171,44 @@ function getTemplate(string $templateName = '', bool $enableHTMLComments = true)
 
 function cacheUpdate(): bool
 {
-    global $db, $cache;
+    global $db, $cache, $plugins;
 
-    $cacheData = [];
+    $dbFields = $cacheData = [];
+
+    $hookArguments = [
+        'dbFields' => &$dbFields,
+        'cacheData' => &$cacheData
+    ];
+
+    $hookArguments = $plugins->run_hooks('ougc_custom_rates_cache_update_start', $hookArguments);
+
+    $dbFields = array_merge($dbFields, [
+        'rid',
+        'name',
+        'image',
+        'groups',
+        'forums',
+        'firstpost',
+        'allowdeletion',
+        'customvariable',
+        'requireattach',
+        'reptype',
+        'ignorepoints',
+        'inmultiple',
+        'createCoreReputationType'
+    ]);
 
     $query = $db->simple_select(
         'ougc_customrep',
-        'rid, name, image, groups, forums, firstpost, allowdeletion, customvariable, requireattach, reptype, points, ignorepoints, inmultiple, createCoreReputationType',
+        implode(',', $dbFields),
         "visible='1'",
         ['order_by' => 'disporder']
     );
 
     while ($rateData = $db->fetch_array($query)) {
-        $cacheData[(int)$rateData['rid']] = [
+        $rateID = (int)$rateData['rid'];
+
+        $cacheData[$rateID] = [
             'name' => $rateData['name'],
             'image' => $rateData['image'],
             'groups' => $rateData['groups'],
@@ -193,11 +218,14 @@ function cacheUpdate(): bool
             'customvariable' => (int)$rateData['customvariable'],
             'requireattach' => (int)$rateData['requireattach'],
             'reptype' => (int)$rateData['reptype'],
-            'points' => (float)$rateData['points'],
             'ignorepoints' => (int)$rateData['ignorepoints'],
             'inmultiple' => (int)$rateData['inmultiple'],
             'createCoreReputationType' => (int)$rateData['createCoreReputationType'],
         ];
+
+        $hookArguments['rateData'] = $rateData;
+
+        $hookArguments = $plugins->run_hooks('ougc_custom_rates_cache_update_intermediate', $hookArguments);
     }
 
     $cache->update('ougc_customrep', $cacheData);
@@ -285,10 +313,6 @@ function rateInsert(array $rateData = [], bool $isUpdate = false, int $rateID = 
         }
     }
 
-    if (isset($rateData['points'])) {
-        $insertData['points'] = (float)$rateData['points'];
-    }
-
     $insertData['reptype'] = REPUTATION_TYPE_NONE;
 
     if (!empty($rateData['reptype'])) {
@@ -296,6 +320,7 @@ function rateInsert(array $rateData = [], bool $isUpdate = false, int $rateID = 
     }
 
     $hookArguments = [
+        'rateData' => $rateData,
         'insertData' => &$insertData
     ];
 
@@ -448,10 +473,6 @@ function logInsert(
         return 0;
     }
 
-    if (isset($logData['points'])) {
-        $insertData['points'] = (float)$logData['points'];
-    }
-
     if (isset($logData['dateline'])) {
         $insertData['dateline'] = (int)$logData['dateline'];
     } else {
@@ -583,6 +604,8 @@ function logDelete(int $logID): bool
         alertDelete($reputationData['userID'], (int)$mybb->user['uid'], $reputationData['postID']);
     }
 
+    $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_delete_end', $hookArguments);
+
     $db->delete_query('ougc_customrep_log', "lid='{$logID}'");
 
     return true;
@@ -597,11 +620,6 @@ function logAdminAction(int $rateID = 0): bool
     }
 
     return true;
-}
-
-function newPointsIsInstalled(): bool
-{
-    return function_exists('newpoints_addpoints');
 }
 
 function alertsIsInstalled(): bool

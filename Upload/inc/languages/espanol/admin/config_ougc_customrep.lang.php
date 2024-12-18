@@ -83,8 +83,6 @@ $l['ougc_customrep_h_requireattach'] = 'Se necesita para descargar archivos adju
 $l['ougc_customrep_h_requireattach_d'] = 'Habilita esta característica si los usuarios tendrán que dar esta reacción a un mensaje para poder descargar sus archivos adjuntos.';
 $l['ougc_customrep_h_reptype'] = 'Nivel de reputación';
 $l['ougc_customrep_h_reptype_d'] = 'Selecciona cuántos puntos de reputación añadirá a un usuario. Deja vacío para desactivar.';
-$l['ougc_customrep_h_points'] = 'Costo en puntos de Newpoints';
-$l['ougc_customrep_h_points_d'] = 'Tenga en cuenta que el autor del mensaje recibe los puntos y dichos puntos serán revertidos si se elimina la reacción.';
 $l['ougc_customrep_h_ignorepoints'] = 'Ocultar mensaje por conteo';
 $l['ougc_customrep_h_ignorepoints_d'] = 'Los mensajes pueden ser ocultados por defecto si alcanzan cierta cantidad de reacciones. Elige la cantidad de reacciones necesarias para ocultar los mensajes.';
 

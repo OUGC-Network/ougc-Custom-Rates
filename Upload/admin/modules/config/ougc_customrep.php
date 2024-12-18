@@ -43,10 +43,10 @@ use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
 
 defined('IN_MYBB') || die('Direct initialization of this file is not allowed.');
 
-global $mybb, $db, $lang;
+global $mybb, $db, $lang, $plugins;
 global $page;
 
-urlHandlerSet('index.php?module=config-ougc_customrep');
+urlHandlerSet('index.php?module=config-ougc_custom_rates');
 
 loadLanguage();
 
@@ -90,7 +90,6 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         'allowdeletion' => 1,
         'customvariable' => 0,
         'requireattach' => 0,
-        'points' => 0,
         'ignorepoints' => 0,
         'inmultiple' => 0,
         'createCoreReputationType' => 0,
@@ -109,6 +108,8 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $page->output_header($lang->ougc_customrep_tab_add);
 
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_add');
+
+        $plugins->run_hooks('ougc_custom_rates_admin_add_start');
     } else {
         if (!($rateData = rateGet($mybb->get_input('rid', 1)))) {
             \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
@@ -129,6 +130,8 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $page->output_header($lang->ougc_customrep_tab_edit);
 
         $page->output_nav_tabs($sub_tabs, 'ougc_customrep_edit');
+
+        $plugins->run_hooks('ougc_custom_rates_admin_edit_start');
     }
 
     if ($mybb->request_method == 'post') {
@@ -350,46 +353,49 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             ['style' => 'text-align: center; width: 30px;" maxlength="5']
         )
     );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_visible,
         $lang->ougc_customrep_f_visible_d,
         $form->generate_yes_no_radio('visible', $rateInputData['visible'])
     );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_firstpost,
         $lang->ougc_customrep_h_firstpost_d,
         $form->generate_yes_no_radio('firstpost', $rateInputData['firstpost'])
     );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_allowdeletion,
         $lang->ougc_customrep_h_allowdeletion_d,
         $form->generate_yes_no_radio('allowdeletion', $rateInputData['allowdeletion'])
     );
+
     $isAddRatePage || $form_container->output_row(
         $lang->ougc_customrep_h_customvariable,
         $lang->sprintf($lang->ougc_customrep_h_customvariable_d, (int)$rateData['rid']),
         $form->generate_yes_no_radio('customvariable', $rateInputData['customvariable'])
     );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_requireattach,
         $lang->ougc_customrep_h_requireattach_d,
         $form->generate_yes_no_radio('requireattach', $rateInputData['requireattach'])
     );
-    $form_container->output_row(
-        $lang->ougc_customrep_h_points,
-        $lang->ougc_customrep_h_points_d,
-        $form->generate_text_box('points', $rateInputData['points'])
-    );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_ignorepoints,
         $lang->ougc_customrep_h_ignorepoints_d,
         $form->generate_text_box('ignorepoints', $rateInputData['ignorepoints'])
     );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_inmultiple,
         $lang->ougc_customrep_h_inmultiple_d,
         $form->generate_yes_no_radio('inmultiple', $rateInputData['inmultiple'])
     );
+
     $form_container->output_row(
         $lang->ougc_customrep_h_createCoreReputationType,
         $lang->ougc_customrep_h_createCoreReputationType_d,
@@ -400,6 +406,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             CORE_REPUTATION_TYPE_NEGATIVE => $lang->ougc_customrep_h_createCoreReputationTypeNegative,
         ], $rateInputData['createCoreReputationType'])
     );
+
+    if ($isAddRatePage) {
+        $plugins->run_hooks('ougc_custom_rates_admin_add_end');
+    } else {
+        $plugins->run_hooks('ougc_custom_rates_admin_edit_end');
+    }
 
     $form_container->end();
 
