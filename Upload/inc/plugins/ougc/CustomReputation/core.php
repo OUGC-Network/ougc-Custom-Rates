@@ -327,20 +327,20 @@ function rateInsert(array $rateData = [], bool $isUpdate = false, int $rateID = 
     if ($isUpdate) {
         $hookArguments['rateID'] = $rateID;
 
-        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_update_start', $hookArguments);
+        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_rate_update_start', $hookArguments);
     } else {
-        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_start', $hookArguments);
+        $hookArguments = $plugins->run_hooks('ougc_custom_reputation_rate_insert_start', $hookArguments);
     }
 
     if ($insertData) {
         if ($isUpdate) {
             $db->update_query('ougc_customrep', $insertData, "rid='{$rateID}'");
 
-            $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_update_end', $hookArguments);
+            $hookArguments = $plugins->run_hooks('ougc_custom_reputation_rate_update_end', $hookArguments);
         } else {
             $hookArguments['rateID'] = $rateID = (int)$db->insert_query('ougc_customrep', $insertData);
 
-            $hookArguments = $plugins->run_hooks('ougc_custom_reputation_log_insert_end', $hookArguments);
+            $hookArguments = $plugins->run_hooks('ougc_custom_reputation_rate_insert_end', $hookArguments);
         }
     }
 }
@@ -946,8 +946,6 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
                 $rateExtraClass = '_delete';
 
                 $classextra = $rateExtraClass;
-
-                $rateName .= '--Voted';
 
                 $rateTitleText = $lang->sprintf($lang->ougc_customrep_delete, $rateName);
 

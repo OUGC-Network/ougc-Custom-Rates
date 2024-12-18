@@ -1037,6 +1037,8 @@ function member_profile_end(): bool
     );
 
     while ($rateID = (int)$db->fetch_field($query, 'rid')) {
+        isset($statsGiven[$rateID]) || $statsGiven[$rateID] = 0;
+
         ++$statsGiven[$rateID];
     }
 
@@ -1055,6 +1057,8 @@ function member_profile_end(): bool
     );
 
     while ($rateID = (int)$db->fetch_field($query, 'rid')) {
+        isset($statsReceived[$rateID]) || $statsReceived[$rateID] = 0;
+
         ++$statsReceived[$rateID];
     }
 

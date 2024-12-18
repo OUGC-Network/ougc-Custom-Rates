@@ -46,7 +46,7 @@ defined('IN_MYBB') || die('Direct initialization of this file is not allowed.');
 global $mybb, $db, $lang, $plugins;
 global $page;
 
-urlHandlerSet('index.php?module=config-ougc_custom_rates');
+urlHandlerSet('index.php?module=config-ougc_customrep');
 
 loadLanguage();
 

@@ -80,7 +80,7 @@ function admin_config_menu(array $subMenuItems): array
     $subMenuItems[] = [
         'id' => 'ougc_customrep',
         'title' => $lang->ougc_custom_rates_admin_menu,
-        'link' => 'index.php?module=config-ougc_custom_rates'
+        'link' => 'index.php?module=config-ougc_customrep'
     ];
 
     return $subMenuItems;
