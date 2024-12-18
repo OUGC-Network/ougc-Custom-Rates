@@ -1,0 +1,64 @@
+/***************************************************************************
+ *
+ *	ougc Custom Rates plugin (CSS FILE)
+ *	Author: Omar Gonzalez
+ *	Copyright: © 2012 - 2020 Omar Gonzalez
+ *
+ *	Website: https://ougc.network
+ *
+ *	Create custom rates for users to use in posts.
+ *
+ ***************************************************************************
+
+****************************************************************************
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+****************************************************************************/
+
+.customrep .number {
+    background: #eee;
+    -moz-border-radius: 500rem;
+    -webkit-border-radius: 500rem;
+    border-radius: 500rem;
+    text-decoration: none !important;
+    padding: 0 .4em;
+    color: black;
+}
+
+.customrep .number.voted {
+    /*background: #fdd;*/
+}
+
+.customrep img {
+    vertical-align: middle;
+}
+
+.customrep img, .customrep i {
+    cursor: pointer;
+    line-height: 1;
+}
+
+.customrep > span {
+    display: inline-block;
+    padding: 2px 5px;
+    margin: 2px;
+    background: #eee url(images/buttons_bg.png) repeat-x;
+    border: 1px solid #ccc;
+    color: #555;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.customrep, .customrep * {
+    font-size: 11px;
+}

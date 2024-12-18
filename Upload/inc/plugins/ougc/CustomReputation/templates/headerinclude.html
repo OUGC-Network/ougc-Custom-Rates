@@ -1,0 +1,61 @@
+<script>
+    var OUGC_CustomReputation = {
+        Add: function (tid, pid, postcode, rid, del) {
+            var deleteit = '';
+            if (del == 1) {
+                deleteit = '&delete=1';
+            }
+
+            $.ajax(
+                {
+                    url: 'showthread.php?tid=' + tid + '&action=customReputation&pid=' + pid + '&my_post_key=' + postcode + '&rid=' + rid + deleteit,
+                    type: 'post',
+                    dataType: 'json',
+                    success: function (request) {
+                        if (request.errors) {
+                            alert(request.errors);
+                            return false;
+                        }
+                        if (request.success == 1) {
+                            $('#customrep_' + parseInt(request.pid)).replaceWith(request.content);
+                            $('#customrep_' + parseInt(request.pid) + '_' + parseInt(request.rid)).replaceWith(request.content_rep);
+                            $('#customrep_rep_' + parseInt(request.pid)).replaceWith(request.userreputation);
+
+                            if (typeof ougccustomrep_xthreads_activate !== 'undefined') {
+                                $.get('showthread.php?tid=' + tid + '&pid=' + pid, function (data) {
+                                    {$customThreadFieldsVariables}
+                                });
+                            }
+
+                            return true;
+                        }
+                    }
+                });
+        },
+
+        xThreads: function (value, field) {
+            var input = parseInt(value);
+
+            {$customThreadFieldsHideSkip}
+
+            if (value > 0) {
+                $('#xt_' + field).show();
+            } else {
+                $('#xt_' + field).hide();
+            }
+        },
+
+        xThreadsHideSet: function (field) {
+            if (typeof window.hide_fields === 'undefined') {
+                window.hide_fields = [];
+            }
+
+            window.hide_fields = $.merge([field], window.hide_fields);
+        },
+    }
+
+    $(document).ready(function () {
+        {$customThreadFieldsVariablesEditPost}
+    });
+</script>
+{$fontAwesomeCode}
