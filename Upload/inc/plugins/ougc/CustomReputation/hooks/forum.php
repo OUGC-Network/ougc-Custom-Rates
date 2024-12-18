@@ -28,37 +28,37 @@
 
 declare(strict_types=1);
 
-namespace ougc\CustomReputation\Hooks\Forum;
+namespace ougc\CustomRates\Hooks\Forum;
 
 use MyBB;
 use MybbStuff_MyAlerts_AlertFormatterManager;
-use ougc\CustomReputation\Core\MyAlertsFormatter;
+use ougc\CustomRates\Core\MyAlertsFormatter;
 use postParser;
 
-use function ougc\CustomReputation\Core\alertsIsInstalled;
-use function ougc\CustomReputation\Core\forumGetRates;
-use function ougc\CustomReputation\Core\getTemplate;
-use function ougc\CustomReputation\Core\isAllowedForum;
-use function ougc\CustomReputation\Core\loadLanguage;
-use function ougc\CustomReputation\Core\logDelete;
-use function ougc\CustomReputation\Core\logGet;
-use function ougc\CustomReputation\Core\logInsert;
-use function ougc\CustomReputation\Core\logUpdate;
-use function ougc\CustomReputation\Core\modalRender;
-use function ougc\CustomReputation\Core\modalRenderError;
-use function ougc\CustomReputation\Core\outputAjaxData;
-use function ougc\CustomReputation\Core\postRatesParse;
-use function ougc\CustomReputation\Core\rateGet;
-use function ougc\CustomReputation\Core\rateGetImage;
-use function ougc\CustomReputation\Core\rateGetName;
-use function ougc\CustomReputation\Core\urlHandlerBuild;
-use function ougc\CustomReputation\Core\urlHandlerSet;
+use function ougc\CustomRates\Core\alertsIsInstalled;
+use function ougc\CustomRates\Core\forumGetRates;
+use function ougc\CustomRates\Core\getTemplate;
+use function ougc\CustomRates\Core\isAllowedForum;
+use function ougc\CustomRates\Core\loadLanguage;
+use function ougc\CustomRates\Core\logDelete;
+use function ougc\CustomRates\Core\logGet;
+use function ougc\CustomRates\Core\logInsert;
+use function ougc\CustomRates\Core\logUpdate;
+use function ougc\CustomRates\Core\modalRender;
+use function ougc\CustomRates\Core\modalRenderError;
+use function ougc\CustomRates\Core\outputAjaxData;
+use function ougc\CustomRates\Core\postRatesParse;
+use function ougc\CustomRates\Core\rateGet;
+use function ougc\CustomRates\Core\rateGetImage;
+use function ougc\CustomRates\Core\rateGetName;
+use function ougc\CustomRates\Core\urlHandlerBuild;
+use function ougc\CustomRates\Core\urlHandlerSet;
 
-use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
-use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
-use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
-use const ougc\CustomReputation\Core\POST_VISIBLE_STATUS_DRAFT;
-use const ougc\CustomReputation\ROOT;
+use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEGATIVE;
+use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEUTRAL;
+use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_POSITIVE;
+use const ougc\CustomRates\Core\POST_VISIBLE_STATUS_DRAFT;
+use const ougc\CustomRates\ROOT;
 
 function global_start(): bool
 {
@@ -528,9 +528,9 @@ function showthread_start09()
     $errorFunction = 'error';
 
     if ($mybb->get_input('action') == 'customReputationPopUp') {
-        $errorFunction = '\ougc\CustomReputation\Core\modalRenderError';
+        $errorFunction = '\ougc\CustomRates\Core\modalRenderError';
     } elseif ($ajaxIsEnabled) {
-        $errorFunction = '\ougc\CustomReputation\Core\ajaxError';
+        $errorFunction = '\ougc\CustomRates\Core\ajaxError';
     }
 
     $rateID = $mybb->get_input('rid', MyBB::INPUT_INT);

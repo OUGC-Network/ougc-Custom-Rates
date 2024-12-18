@@ -26,20 +26,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-use function ougc\CustomReputation\Core\cacheUpdate;
-use function ougc\CustomReputation\Core\loadLanguage;
-use function ougc\CustomReputation\Core\logAdminAction;
-use function ougc\CustomReputation\Core\rateDelete;
-use function ougc\CustomReputation\Core\rateGet;
-use function ougc\CustomReputation\Core\rateGetImage;
-use function ougc\CustomReputation\Core\rateInsert;
-use function ougc\CustomReputation\Core\rateUpdate;
-use function ougc\CustomReputation\Core\urlHandlerBuild;
-use function ougc\CustomReputation\Core\urlHandlerSet;
+use function ougc\CustomRates\Core\cacheUpdate;
+use function ougc\CustomRates\Core\loadLanguage;
+use function ougc\CustomRates\Core\logAdminAction;
+use function ougc\CustomRates\Core\rateDelete;
+use function ougc\CustomRates\Core\rateGet;
+use function ougc\CustomRates\Core\rateGetImage;
+use function ougc\CustomRates\Core\rateInsert;
+use function ougc\CustomRates\Core\rateUpdate;
+use function ougc\CustomRates\Core\urlHandlerBuild;
+use function ougc\CustomRates\Core\urlHandlerSet;
 
-use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEGATIVE;
-use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_NEUTRAL;
-use const ougc\CustomReputation\Core\CORE_REPUTATION_TYPE_POSITIVE;
+use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEGATIVE;
+use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEUTRAL;
+use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_POSITIVE;
 
 defined('IN_MYBB') || die('Direct initialization of this file is not allowed.');
 
@@ -112,7 +112,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         $plugins->run_hooks('ougc_custom_rates_admin_add_start');
     } else {
         if (!($rateData = rateGet($mybb->get_input('rid', 1)))) {
-            \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
+            \ougc\CustomRates\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
         }
 
         $rateInputData = array_merge($rateInputData, $rateData);
@@ -246,7 +246,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             logAdminAction($mybb->get_input('rid', 1));
 
-            \ougc\CustomReputation\Admin\admin_redirect($lang->$lang_var);
+            \ougc\CustomRates\Admin\admin_redirect($lang->$lang_var);
         }
     }
 
@@ -427,12 +427,12 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     $page->output_footer();
 } elseif ($mybb->get_input('action') == 'delete') {
     if (!($rateData = rateGet($mybb->get_input('rid', 1)))) {
-        \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
+        \ougc\CustomRates\Admin\admin_redirect($lang->ougc_customrep_message_invalidrep, true);
     }
 
     if ($mybb->request_method == 'post') {
         if (isset($mybb->input['no']) || $mybb->get_input('my_post_key') != $mybb->post_code) {
-            \ougc\CustomReputation\Admin\admin_redirect();
+            \ougc\CustomRates\Admin\admin_redirect();
         }
 
         rateDelete($mybb->get_input('rid', 1));
@@ -441,7 +441,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         cacheUpdate();
 
-        \ougc\CustomReputation\Admin\admin_redirect($lang->ougc_customrep_message_deleterep);
+        \ougc\CustomRates\Admin\admin_redirect($lang->ougc_customrep_message_deleterep);
     }
 
     $page->add_breadcrumb_item($lang->delete);
@@ -500,7 +500,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
             cacheUpdate();
 
-            \ougc\CustomReputation\Admin\admin_redirect();
+            \ougc\CustomRates\Admin\admin_redirect();
         }
 
         $form = new Form(urlHandlerBuild(['action' => 'updatedisporder']), 'post');

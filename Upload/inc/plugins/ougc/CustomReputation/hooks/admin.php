@@ -28,13 +28,13 @@
 
 declare(strict_types=1);
 
-namespace ougc\CustomReputation\Hooks\Admin;
+namespace ougc\CustomRates\Hooks\Admin;
 
 use MyBB;
 
 use function admin_redirect;
-use function ougc\CustomReputation\Core\loadLanguage;
-use function ougc\CustomReputation\Core\logUpdate;
+use function ougc\CustomRates\Core\loadLanguage;
+use function ougc\CustomRates\Core\logUpdate;
 
 function admin_config_plugins_deactivate(): bool
 {

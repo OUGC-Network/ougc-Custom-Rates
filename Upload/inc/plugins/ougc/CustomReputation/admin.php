@@ -28,21 +28,21 @@
 
 declare(strict_types=1);
 
-namespace ougc\CustomReputation\Admin;
+namespace ougc\CustomRates\Admin;
 
 use DirectoryIterator;
 use MybbStuff_MyAlerts_Entity_AlertType;
 use stdClass;
 
-use function ougc\CustomReputation\Core\alertsIsInstalled;
-use function ougc\CustomReputation\Core\alertsObject;
-use function ougc\CustomReputation\Core\cacheUpdate;
-use function ougc\CustomReputation\Core\getSetting;
-use function ougc\CustomReputation\Core\loadLanguage;
-use function ougc\CustomReputation\Core\rateInsert;
-use function ougc\CustomReputation\Core\urlHandlerBuild;
+use function ougc\CustomRates\Core\alertsIsInstalled;
+use function ougc\CustomRates\Core\alertsObject;
+use function ougc\CustomRates\Core\cacheUpdate;
+use function ougc\CustomRates\Core\getSetting;
+use function ougc\CustomRates\Core\loadLanguage;
+use function ougc\CustomRates\Core\rateInsert;
+use function ougc\CustomRates\Core\urlHandlerBuild;
 
-use const ougc\CustomReputation\ROOT;
+use const ougc\CustomRates\ROOT;
 use const PLUGINLIBRARY;
 
 const TABLES_DATA = [

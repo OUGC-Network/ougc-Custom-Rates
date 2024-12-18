@@ -28,13 +28,13 @@
 
 declare(strict_types=1);
 
-namespace ougc\CustomReputation\Core;
+namespace ougc\CustomRates\Core;
 
 use MybbStuff_MyAlerts_AlertManager;
 use MybbStuff_MyAlerts_AlertTypeManager;
 use MybbStuff_MyAlerts_Entity_Alert;
 
-use const ougc\CustomReputation\ROOT;
+use const ougc\CustomRates\ROOT;
 
 const URL = 'showthread.php';
 

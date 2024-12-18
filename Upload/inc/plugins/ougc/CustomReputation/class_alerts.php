@@ -28,7 +28,7 @@
 
 declare(strict_types=1);
 
-namespace ougc\CustomReputation\Core;
+namespace ougc\CustomRates\Core;
 
 use MybbStuff_MyAlerts_Entity_Alert;
 use MybbStuff_MyAlerts_Formatter_AbstractFormatter;

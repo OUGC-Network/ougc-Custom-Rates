@@ -28,11 +28,11 @@
 
 declare(strict_types=1);
 
-namespace ougc\CustomReputation\Hooks\Shared;
+namespace ougc\CustomRates\Hooks\Shared;
 
 use userDataHandler;
 
-use function ougc\CustomReputation\Core\logDelete;
+use function ougc\CustomRates\Core\logDelete;
 
 function datahandler_user_delete_content(userDataHandler &$dataHandler): userDataHandler
 {
