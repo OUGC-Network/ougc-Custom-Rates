@@ -316,6 +316,8 @@ function pluginDeactivate(): bool
 {
     global $PL;
 
+    $PL || loadPluginLibrary();
+
     $PL->stylesheet_deactivate('ougc_customrep');
 
     change_admin_permission('config', 'ougc_customrep', 0);

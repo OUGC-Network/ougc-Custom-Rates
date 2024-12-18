@@ -26,22 +26,13 @@
 ****************************************************************************/
 
 .customrep .number {
-    border: 1px solid #ccc;
     background: #eee;
-    position: absolute;
-    z-index: 2;
-    top: -0.7em;
-    right: -1em;
-    min-width: 1.2em;
-    min-height: 1.2em;
-    padding: .2em;
-    line-height: 1;
-    text-align: center;
     -moz-border-radius: 500rem;
     -webkit-border-radius: 500rem;
     border-radius: 500rem;
     text-decoration: none !important;
-    font-weight: bolder;
+    padding: 0 .4em;
+    color: black;
 }
 
 .customrep .number.voted {
@@ -63,11 +54,9 @@
     margin: 2px;
     background: #eee url(images/buttons_bg.png) repeat-x;
     border: 1px solid #ccc;
-    -moz-border-radius: 6px;
-    -webkit-border-radius: 6px;
+    color: #555;
     border-radius: 6px;
-    position: relative;
-    margin-right: 1em;
+    cursor: pointer;
 }
 
 .customrep, .customrep * {

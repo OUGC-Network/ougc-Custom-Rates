@@ -639,6 +639,10 @@ function showthread_start09()
 
         $trow = alt_trow(true);
 
+        global $plugins;
+
+        $hookArguments = [];
+
         while ($logData = $db->fetch_array($query)) {
             $profileLinkFormatted = build_profile_link(
                 format_name(
@@ -649,6 +653,10 @@ function showthread_start09()
                 $logData['uid'],
                 '_blank'
             );
+
+            $hookArguments['profileLinkFormatted'] = &$profileLinkFormatted;
+
+            $hookArguments = $plugins->run_hooks('ougc_custom_rates_reputation_popup_user', $hookArguments);
 
             $logDate = $lang->sprintf(
                 $lang->ougc_customrep_popup_date,
@@ -989,7 +997,7 @@ function member_profile_end(): bool
 
     $fontAwesomeCode = '';
 
-    if ($mybb->settings['ougc_customrep_fontawesome']) {
+    if (!empty($mybb->settings['ougc_customrep_fontawesome'])) {
         $fontAwesomeCode = eval(getTemplate('headerinclude_fa'));
     }
 
@@ -1046,7 +1054,7 @@ function member_profile_end(): bool
 
     $imageTemplateName = 'rep_img';
 
-    if (empty($mybb->settings['ougc_customrep_fontawesome'])) {
+    if (!empty($mybb->settings['ougc_customrep_fontawesome'])) {
         $imageTemplateName = 'rep_img_fa';
     }
 

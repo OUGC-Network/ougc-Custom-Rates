@@ -113,13 +113,12 @@ function admin_config_settings_change(): bool
 
     loadLanguage();
 
-    if ($mybb->request_method === 'post' && !isset($mybb->input['upsetting']['ougc_customrep_xthreads_hide'])) {
+    if ($mybb->request_method === 'post' && isset($mybb->input['upsetting']['ougc_customrep_xthreads_hide'])) {
         $mybb->input['upsetting']['ougc_customrep_xthreads_hide'] = implode(
             ',',
             (array)$mybb->input['upsetting']['ougc_customrep_xthreads_hide']
         );
     }
-
 
     return true;
 }
@@ -149,8 +148,8 @@ function admin_formcontainer_output_row(array &$hookArguments): array
 
     if (
         empty($hookArguments['title']) ||
-        empty($lang->setting_ougc_xthreads_hide) ||
-        $hookArguments['title'] !== $lang->setting_ougc_xthreads_hide
+        empty($lang->setting_ougc_customrep_xthreads_hide) ||
+        $hookArguments['title'] !== $lang->setting_ougc_customrep_xthreads_hide
     ) {
         return $hookArguments;
     }
@@ -158,7 +157,7 @@ function admin_formcontainer_output_row(array &$hookArguments): array
     $customThreadFieldsCache = $cache->read('threadfields');
 
     if (!function_exists('xthreads_gettfcache') || empty($customThreadFieldsCache)) {
-        $hookArguments['content'] = $lang->setting_ougc_xthreads_information;
+        $hookArguments['content'] = $lang->setting_ougc_customrep_xthreads_information;
 
         return $hookArguments;
     }

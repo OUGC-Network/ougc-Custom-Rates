@@ -49,7 +49,7 @@ define('ougc\CustomRates\Core\SETTINGS', [
     'myAlertsVersion' => '2.1.0'
 ]);
 
-define('ougc\CustomReputation\Core\DEBUG', false);
+define('ougc\CustomRates\Core\DEBUG', false);
 
 define('ougc\CustomRates\ROOT', constant('MYBB_ROOT') . 'inc/plugins/ougc/CustomReputation');
 
@@ -108,84 +108,84 @@ function reload_ougc_customrep(): bool
 }
 
 // Helper function for xThreads feature
-function ougc_customrep_xthreads_hide($value = '', $field = true)
-{
-    global $threadfields, $cache, $thread, $mybb, $db, $lang, $templates, $fid;
+function ougc_customrep_xthreads_hide(
+    string $hiddenContent = '',
+    string $requiredRateSettingThreadFieldKey = ''
+): string {
+    global $threadfields, $cache, $thread, $mybb, $db, $lang, $fid;
 
-    $fid = (int)$fid;
+    $forumID = (int)($fid ?? 0);
 
     loadLanguage();
 
-    static $reps = null;
+    static $ratesCache = null;
 
-    if ($reps === null) {
-        $reps = (array)$cache->read('ougc_customrep');
+    if ($ratesCache === null) {
+        $ratesCache = (array)$cache->read('ougc_customrep');
 
-        if ($fid) {
-            foreach ($reps as $rid => $rep) {
-                if (!is_member($rep['forums'], ['usergroup' => $fid, 'additionalgroups' => ''])) {
-                    unset($reps[$rid]);
+        if ($forumID) {
+            foreach ($ratesCache as $rateID => $rateData) {
+                if (!is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {
+                    unset($ratesCache[$rateID]);
                 }
             }
         }
     }
 
-    $require_any = $field === true;
+    $requireAnyRate = $requiredRateSettingThreadFieldKey === '';
 
-    $rid = $threadfields[$field];
+    $requiredRateID = $threadfields[$requiredRateSettingThreadFieldKey] ?? 0;
 
-    // There are no ratings
-    if (empty($reps) || (!$require_any && empty($reps[$rid]))) {
-        return $value;
+    if (empty($ratesCache) || (!$requireAnyRate && empty($ratesCache[$requiredRateID]))) {
+        return $hiddenContent;
     }
 
-    $thread['firstpost'] = (int)$thread['firstpost'];
+    $firstPostID = (int)($thread['firstpost'] ?? 0);
 
-    $mybb->user['uid'] = (int)$mybb->user['uid'];
+    $currentUserID = (int)$mybb->user['uid'];
 
-    // thread author is the same as current user, do nothing
-    if ((int)$thread['uid'] === $mybb->user['uid']) {
-        return $value;
+    if ((int)$thread['uid'] === $currentUserID) {
+        return $hiddenContent;
     }
 
     // such rating doesn't exists (maybe because none was selected), do nothing
-    if (!$require_any && empty($rid)) {
-        return $value;
+    if (!$requireAnyRate && empty($requiredRateID)) {
+        return $hiddenContent;
     }
 
     // If thread field data is empty we assume author didn't select a value
-    if (!$require_any && isset($rid) && empty($rid)) {
-        return $value;
+    if (!$requireAnyRate && isset($requiredRateID) && empty($requiredRateID)) {
+        return $hiddenContent;
     }
 
-    if (!empty($thread['firstpost']) && ($require_any || !empty($reps[$rid]))) {
-        $where = "pid='{$thread['firstpost']}' AND uid='{$mybb->user['uid']}'";
+    if (!empty($firstPostID) && ($requireAnyRate || !empty($ratesCache[$requiredRateID]))) {
+        $whereClauses = ["pid='{$firstPostID}'", "uid='{$currentUserID}'"];
 
-        if (!$require_any) {
-            $where .= " AND rid='{$rid}'";
+        if (!$requireAnyRate) {
+            $whereClauses[] = "rid='{$requiredRateID}'";
         }
 
         $query = $db->simple_select(
             'ougc_customrep_log',
             'lid',
-            $where,
+            implode(' AND ', $whereClauses),
             ['limit', 1]
         );
 
-        if ((int)$db->num_rows($query) < 1) {
-            if ($require_any) {
-                $value = $lang->ougc_customrep_xthreads_error_user_any;
+        if (!$db->num_rows($query)) {
+            if ($requireAnyRate) {
+                $hiddenContent = $lang->ougc_customrep_xthreads_error_user_any;
             } else {
-                $value = $lang->sprintf(
+                $hiddenContent = $lang->sprintf(
                     $lang->ougc_customrep_xthreads_error_user,
-                    htmlspecialchars_uni($reps[$rid]['name'])
+                    htmlspecialchars_uni($ratesCache[$requiredRateID]['name'])
                 );
             }
         }
 
-        $value .= eval(getTemplate('xthreads_js'));
+        $hiddenContent .= eval(getTemplate('xthreads_js'));
 
-        return $value;
+        return $hiddenContent;
     }
 
     // Something is wrong, not sure what

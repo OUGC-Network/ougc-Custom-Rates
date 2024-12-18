@@ -124,11 +124,11 @@ $l['setting_ougc_customrep_xthreads_hide_desc'] = 'Select which xThreads fields 
 $l['setting_ougc_customrep_stats_profile'] = 'Display Users Stats in Profiles';
 $l['setting_ougc_customrep_stats_profile_desc'] = 'Enable this setting to display user stats within profiles.';
 $l['setting_ougc_customrep_enableajax'] = 'Enable Ajax Features';
-$l['setting_ougc_customrep_enableajax_desc'] = 'Enable Ajax features. Please note that the "Enable XMLHttp request features?" setting under the "Server and Optimization Options" settings group needs to be turned on ("Yes") for Ajax featues to work.';
+$l['setting_ougc_customrep_enableajax_desc'] = 'Enable Ajax features. Please note that the "Enable XMLHttp request features?" setting under the "Server and Optimization Options" settings group needs to be turned on ("Yes") for Ajax features to work.';
 $l['setting_ougc_customrep_guests_popup'] = 'Allow Guests to View Popup';
 $l['setting_ougc_customrep_guests_popup_desc'] = 'Enable this setting if you want to allow guests viewing rate detail modals.';
 $l['setting_ougc_customrep_multiple'] = 'Multiple Rating Global Switch';
 $l['setting_ougc_customrep_multiple_desc'] = 'Enable this setting to allow users to rate post multiple times (using different ratings).';
 
-$l['setting_ougc_xthreads_information'] = '<span style="color: gray;">To be able to use this feature you need to install <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> and create some fields according to the documentation.</span>';
+$l['setting_ougc_customrep_xthreads_information'] = '<span style="color: gray;">To be able to use this feature you need to install <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> and create some fields according to the documentation.</span>';
 
