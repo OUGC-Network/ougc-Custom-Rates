@@ -2,13 +2,13 @@
 
 /***************************************************************************
  *
- *    ougc Custom Reputation plugin (/inc/languages/espanol/admin/config_ougc_customrep.lang.php)
+ *    ougc Custom Rates plugin (/inc/languages/espanol/admin/config_ougc_customrep.lang.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
  *    Website: https://ougc.network
  *
- *    Allow users rate posts with custom post reputations with rich features.
+ *    Create custom rates for users to use in posts.
  *
  ***************************************************************************
  ****************************************************************************
@@ -26,7 +26,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-$l['ougc_customrep'] = 'ougc Custom Reputation';
+$l['ougc_customrep'] = 'ougc Custom Rates';
 $l['ougc_customrep_d'] = 'Permite dar reputación personalizada en las publicaciones.';
 
 // PluginLibrary
@@ -95,7 +95,7 @@ $l['ougc_customrep_error_invaliddisporder'] = 'Orden inválido.';
 $l['ougc_customrep_error_invalidreptype'] = 'Nivel de reputación inválido.';
 
 // Settings
-$l['setting_group_ougcCustomReputation'] = 'Custom Reputation';
+$l['setting_group_ougcCustomReputation'] = 'Custom Rates';
 $l['setting_group_ougcCustomReputation_desc'] = 'Permite dar reputación personalizada en las publicaciones.';
 $l['setting_ougc_customrep_firstpost'] = 'Primer mensaje solamente (global)';
 $l['setting_ougc_customrep_firstpost_desc'] = 'Habilita esta opción si deseas que solo se permitan reacciones en el primer mensaje de un tema. Desactiva si deseas configurar esta opción para cada reacción.';

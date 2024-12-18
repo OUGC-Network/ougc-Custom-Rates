@@ -2,13 +2,13 @@
 
 /***************************************************************************
  *
- *    ougc Custom Reputation plugin (/inc/plugins/ougc_customrep.php)
+ *    ougc Custom Rates plugin (/inc/plugins/ougc_customrep.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
  *    Website: https://ougc.network
  *
- *    Allow users rate posts with custom post reputations with rich features.
+ *    Create custom rates for users to use in posts.
  *
  ***************************************************************************
  ****************************************************************************
@@ -36,14 +36,8 @@ use function ougc\CustomReputation\Admin\pluginIsInstalled;
 use function ougc\CustomReputation\Admin\pluginUninstall;
 use function ougc\CustomReputation\Core\addHooks;
 use function ougc\CustomReputation\Core\cacheUpdate;
-use function ougc\CustomReputation\Core\forumGetRates;
 use function ougc\CustomReputation\Core\getTemplate;
-use function ougc\CustomReputation\Core\isAllowedForum;
 use function ougc\CustomReputation\Core\loadLanguage;
-use function ougc\CustomReputation\Core\rateGet;
-use function ougc\CustomReputation\Core\rateGetImage;
-use function ougc\CustomReputation\Core\rateGetName;
-use function ougc\CustomReputation\Core\urlHandlerBuild;
 
 use const ougc\CustomReputation\ROOT;
 

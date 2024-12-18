@@ -2,13 +2,13 @@
 
 /***************************************************************************
  *
- *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/admin.php)
+ *    ougc Custom Rates plugin (/inc/plugins/ougc/CustomReputation/admin.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
  *    Website: https://ougc.network
  *
- *    Allow users rate posts with custom post reputations with rich features.
+ *    Create custom rates for users to use in posts.
  *
  ***************************************************************************
  ****************************************************************************
@@ -193,7 +193,7 @@ function pluginInfo(): array
     loadLanguage();
 
     return [
-        'name' => 'ougc Custom Reputation',
+        'name' => 'ougc Custom Rates',
         'description' => $lang->ougc_customrep_d,
         'website' => 'https://ougc.network',
         'author' => 'Omar G.',
@@ -267,7 +267,7 @@ function pluginActivate(): bool
     }
 
     if ($templates) {
-        $PL->templates('ougccustomrep', 'ougc Custom Reputation', $templates);
+        $PL->templates('ougccustomrep', 'ougc Custom Rates', $templates);
     }
 
     if ($styleSheetContents = file_get_contents(ROOT . '/stylesheet.css')) {

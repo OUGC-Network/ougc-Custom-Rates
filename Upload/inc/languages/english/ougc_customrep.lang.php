@@ -2,13 +2,13 @@
 
 /***************************************************************************
  *
- *    ougc Custom Reputation plugin (/inc/languages/english/ougc_customrep.lang.php)
+ *    ougc Custom Rates plugin (/inc/languages/english/ougc_customrep.lang.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
  *    Website: https://ougc.network
  *
- *    Allow users rate posts with custom post reputations with rich features.
+ *    Create custom rates for users to use in posts.
  *
  ***************************************************************************
  ****************************************************************************
@@ -26,7 +26,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ****************************************************************************/
 
-$l['ougc_customrep'] = 'ougc Custom Reputation';
+$l['ougc_customrep'] = 'ougc Custom Rates';
 
 // Error messages
 $l['ougc_customrep_error'] = 'Error';

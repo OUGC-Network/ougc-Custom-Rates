@@ -2,13 +2,13 @@
 
 /***************************************************************************
  *
- *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/hooks/admin.php)
+ *    ougc Custom Rates plugin (/inc/plugins/ougc/CustomReputation/hooks/admin.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
  *    Website: https://ougc.network
  *
- *    Allow users rate posts with custom post reputations with rich features.
+ *    Create custom rates for users to use in posts.
  *
  ***************************************************************************
  ****************************************************************************

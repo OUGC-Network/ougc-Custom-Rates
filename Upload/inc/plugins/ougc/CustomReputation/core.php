@@ -2,13 +2,13 @@
 
 /***************************************************************************
  *
- *    ougc Custom Reputation plugin (/inc/plugins/ougc/CustomReputation/core.php)
+ *    ougc Custom Rates plugin (/inc/plugins/ougc/CustomReputation/core.php)
  *    Author: Omar Gonzalez
  *    Copyright: © 2012 - 2020 Omar Gonzalez
  *
  *    Website: https://ougc.network
  *
- *    Allow users rate posts with custom post reputations with rich features.
+ *    Create custom rates for users to use in posts.
  *
  ***************************************************************************
  ****************************************************************************
@@ -873,7 +873,6 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
             }
         }
 
-        // Count the votes for this reputation in this post
         if (isset($customReputationCacheQuery[$rateID][$postID])) {
             $totalReceivedRates = count($customReputationCacheQuery[$rateID][$postID]);
         }
@@ -896,6 +895,8 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
         $number = &$totalReceivedRates;
 
+        $rid = &$rateID;
+
         $totalReceivedRates = eval(getTemplate('rep_number', false));
 
         $imageTemplateName = 'rep_img';
@@ -909,8 +910,6 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
         $rateImage = rateGetImage($rateData['image'], $rateID);
 
         $lang_val = &$rateTitleText;
-
-        $rid = &$rateID;
 
         $image = &$rateImage;
 
@@ -942,10 +941,13 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
                 $rateImage = eval(getTemplate($imageTemplateName, false));
             }
-        } elseif ($isAllowedToVote && ($rateData['inmultiple'] || !(isset($ratesMultipleAllowed[$rateID]) && array_intersect(
-                        $ratesMultipleAllowed,
-                        $ratesVotedFor
-                    )))) {
+        } elseif (
+            $isAllowedToVote &&
+            (
+                $rateData['inmultiple'] ||
+                !(isset($ratesMultipleAllowed[$rateID]) && array_intersect($ratesMultipleAllowed, $ratesVotedFor))
+            )
+        ) {
             $link = &$addDeleteUrl;
 
             $classextra = $rateExtraClass;
@@ -955,18 +957,21 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
             $rateImage = eval(getTemplate($imageTemplateName, false));
 
             $rateImage = eval(getTemplate('rep_voted', false));
+        } elseif (
+            $isAllowedToVote &&
+            (
+                !$rateData['inmultiple'] ||
+                (isset($ratesMultipleAllowed[$rateID]) && array_intersect($ratesMultipleAllowed, $ratesVotedFor))
+            )
+        ) {
+            $rateTitleText = $lang->ougc_customrep_voted_undo;
+
+            $rateImage = eval(getTemplate($imageTemplateName, false));
         } else {
             $rateTitleText = $rateName;
 
             $rateImage = eval(getTemplate($imageTemplateName, false));
         }
-
-        /*
-        {
-            $rateTitleText = $lang->ougc_customrep_voted_undo;
-            $rateImage = eval(getTemplate($imageTemplateName, false));
-        }
-        */
 
         $rateCode = eval(getTemplate('rep', false));
 
