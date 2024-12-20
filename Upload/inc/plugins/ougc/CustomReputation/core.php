@@ -255,7 +255,7 @@ function rateGet(int $rateID = 0): array
     if (!isset($customReputationCacheRates[$rateID])) {
         global $db;
 
-        $customReputationCacheRates = [];
+        $customReputationCacheRates[$rateID] = [];
 
         $query = $db->simple_select('ougc_customrep', '*', "rid='{$rateID}'");
 
