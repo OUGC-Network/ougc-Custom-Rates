@@ -374,18 +374,16 @@ function pluginUninstall(): bool
     loadPluginLibrary();
 
     foreach (TABLES_DATA as $tableName => $tableColumns) {
-        foreach ($tableColumns as $fieldName => $fieldData) {
-            if ($db->field_exists($fieldName, $tableName)) {
-                $db->drop_column($tableName, $fieldName);
-            }
+        if ($db->table_exists($tableName)) {
+            $db->drop_table($tableName);
         }
     }
 
-    foreach (FIELDS_DATA as $table => $columns) {
-        if ($db->table_exists($table)) {
-            foreach ($columns as $field => $definition) {
-                if ($db->field_exists($field, $table)) {
-                    $db->drop_column($table, $field);
+    foreach (FIELDS_DATA as $tableName => $tableColumns) {
+        if ($db->table_exists($tableName)) {
+            foreach ($tableColumns as $fieldName => $fieldData) {
+                if ($db->field_exists($fieldName, $tableName)) {
+                    $db->drop_column($tableName, $fieldName);
                 }
             }
         }
@@ -518,6 +516,10 @@ function dbVerifyColumns(): bool
     global $db;
 
     foreach (FIELDS_DATA as $tableName => $tableColumns) {
+        if (!$db->table_exists($tableName)) {
+            continue;
+        }
+
         foreach ($tableColumns as $fieldName => $fieldData) {
             if (!isset($fieldData['type'])) {
                 continue;
