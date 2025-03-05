@@ -393,9 +393,7 @@ function rateGetImage(string $rateImage, int $rateID): string
             '{imgdir}' => $theme['imgdir'] ?? ''
         ];
 
-        $customReputationCacheImages[$rateID] = $mybb->get_asset_url(
-            str_replace(array_keys($replaces), array_values($replaces), $rateImage)
-        );
+        $customReputationCacheImages[$rateID] = str_replace(array_keys($replaces), array_values($replaces), $rateImage);
     }
 
     return $customReputationCacheImages[$rateID];
