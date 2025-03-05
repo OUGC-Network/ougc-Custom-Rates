@@ -27,6 +27,7 @@
 - [Settings](#settings)
     - [File Level Settings](#file_level_settings)
 - [Templates](#templates)
+- [Usage](#usage)
 - [Built Using](#built_using)
 - [Authors](#authors)
 - [Acknowledgments](#acknowledgement)
@@ -147,8 +148,8 @@ To display Rates data it is required that you edit the following template for ea
    the _Hide Post On Count_ feature.
 4. Replace `{$post['userreputation']}` with `<span id="customrep_rep_{$post['pid']}">{$post['userreputation']}</span>`
    in the `postbit_reputation` template.
-5. Place `{$thread['customrep']}` after `{$attachment_count}` in the `postbit` and `forumdisplay_thread` templates to
-   display the rates section in the forum display thread list.
+5. Place `{$thread['customrep']}` after `{$attachment_count}` in the `forumdisplay_thread` and
+   `search_results_threads_thread` templates to display the rates section in the forum display thread list.
 6. Place `{$announcement['customrep']}` after `{$senditem}` in the `portal_announcement` template to display the rates
    section in the portal announcements.
 7. Place `{$memprofile['customrep']}` after `{$modoptions}` in the `member_profile` template to display the rates stats
