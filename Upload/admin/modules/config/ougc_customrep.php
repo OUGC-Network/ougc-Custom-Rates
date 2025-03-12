@@ -82,7 +82,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
     $rateInputData = [
         'name' => '',
         'image' => '',
-        'groups' => [],
+        'allowedGroups' => [],
         'forums' => [],
         'disporder' => 0,
         'visible' => 1,
@@ -117,8 +117,8 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
         $rateInputData = array_merge($rateInputData, $rateData);
 
-        if (!is_array($rateInputData['groups'])) {
-            $rateInputData['groups'] = explode(',', $rateInputData['groups']);
+        if (!is_array($rateInputData['allowedGroups'])) {
+            $rateInputData['allowedGroups'] = explode(',', $rateInputData['allowedGroups']);
         }
 
         if (!is_array($rateInputData['forums'])) {
@@ -139,14 +139,14 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
             if (isset($rateInputData[$key])) {
                 $rateInputData[$key] = $value;
 
-                if ($key == 'groups' || $key == 'forums') {
+                if ($key == 'allowedGroups' || $key == 'forums') {
                     $rateInputData[$key] = implode(',', $rateInputData[$key]);
                 }
             }
         }
     }
 
-    foreach (['groups', 'forums'] as $key) {
+    foreach (['allowedGroups', 'forums'] as $key) {
         if (!isset($mybb->input[$key]) && isset($rateData[$key])) {
             $mybb->input[$key] = $rateData[$key];
         } else {
@@ -156,23 +156,26 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
     $group_checked = ['all' => '', 'custom' => '', 'none' => ''];
     if ($mybb->get_input('groups_type') == 'all' || !$mybb->get_input('groups_type') && (int)$mybb->get_input(
-            'groups'
+            'allowedGroups'
         ) === -1) {
         $mybb->input['groups_type'] = 'all';
-        $mybb->input['groups'] = -1;
+        $mybb->input['allowedGroups'] = -1;
         $group_checked['all'] = 'checked="checked"';
     } elseif ($mybb->get_input('groups_type') == 'none' || !$mybb->get_input('groups_type') && $mybb->get_input(
-            'groups'
+            'allowedGroups'
         ) === '') {
         $mybb->input['groups_type'] = 'none';
-        $mybb->input['groups'] = '';
+        $mybb->input['allowedGroups'] = '';
         $group_checked['none'] = 'checked="checked"';
     } else {
         $mybb->input['groups_type'] = 'custom';
-        $mybb->input['groups'] = array_unique(
+        $mybb->input['allowedGroups'] = array_unique(
             array_map(
                 'intval',
-                !is_array($mybb->input['groups']) ? explode(',', $mybb->input['groups']) : $mybb->input['groups']
+                !is_array($mybb->input['allowedGroups']) ? explode(
+                    ',',
+                    $mybb->input['allowedGroups']
+                ) : $mybb->input['allowedGroups']
             )
         );
         $group_checked['custom'] = 'checked="checked"';
@@ -228,7 +231,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         }
 
         if (empty($errors)) {
-            $rateInputData['groups'] = $mybb->input['groups'];
+            $rateInputData['allowedGroups'] = $mybb->input['allowedGroups'];
 
             $rateInputData['forums'] = $mybb->input['forums'];
 
@@ -284,24 +287,24 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
 
     $groups_select = "
 	<dl style=\"margin-top: 0; margin-bottom: 0; width: 100%\">
-		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"groups_type\" value=\"all\" {$group_checked['all']} class=\"groups_forums_groups_check\" onclick=\"checkAction('groups');\" style=\"vertical-align: middle;\" /> <strong>{$lang->all_groups}</strong></label></dt>
-		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"groups_type\" value=\"custom\" {$group_checked['custom']} class=\"groups_forums_groups_check\" onclick=\"checkAction('groups');\" style=\"vertical-align: middle;\" /> <strong>{$lang->select_groups}</strong></label></dt>
+		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"groups_type\" value=\"all\" {$group_checked['all']} class=\"groups_forums_groups_check\" onclick=\"checkAction('allowedGroups');\" style=\"vertical-align: middle;\" /> <strong>{$lang->all_groups}</strong></label></dt>
+		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"groups_type\" value=\"custom\" {$group_checked['custom']} class=\"groups_forums_groups_check\" onclick=\"checkAction('allowedGroups');\" style=\"vertical-align: middle;\" /> <strong>{$lang->select_groups}</strong></label></dt>
 		<dd style=\"margin-top: 4px;\" id=\"groups_forums_groups_custom\" class=\"groups_forums_groups\">
 			<table cellpadding=\"4\">
 				<tr>
 					<td valign=\"top\"><small>{$lang->groups_colon}</small></td>
 					<td>" . $form->generate_group_select(
-            'groups[]',
-            $mybb->get_input('groups', 2),
+            'allowedGroups[]',
+            $mybb->get_input('allowedGroups', 2),
             ['multiple' => true, 'size' => 5]
         ) . "</td>
 				</tr>
 			</table>
 		</dd>
-		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"groups_type\" value=\"none\" {$group_checked['none']} class=\"groups_forums_groups_check\" onclick=\"checkAction('groups');\" style=\"vertical-align: middle;\" /> <strong>{$lang->none}</strong></label></dt>
+		<dt><label style=\"display: block;\"><input type=\"radio\" name=\"groups_type\" value=\"none\" {$group_checked['none']} class=\"groups_forums_groups_check\" onclick=\"checkAction('allowedGroups');\" style=\"vertical-align: middle;\" /> <strong>{$lang->none}</strong></label></dt>
 	</dl>
 	<script type=\"text/javascript\">
-		checkAction('groups');
+		checkAction('allowedGroups');
 	</script>";
 
     $form_container->output_row(

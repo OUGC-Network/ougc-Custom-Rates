@@ -148,7 +148,7 @@ function reputation_do_add_process(): bool
 
         if (
             empty($rateData['createCoreReputationType']) ||
-            !is_member($rateData['groups']) ||
+            !is_member($rateData['allowedGroups']) ||
             !is_member($rateData['forums'], ['usergroup' => $postData['fid'], 'additionalgroups' => '']) ||
             (!empty($rateData['firstpost']) && $postID !== (int)$threadData['firstpost'])
         ) {
@@ -715,7 +715,7 @@ function showthread_start09()
         $errorFunction($lang->ougc_customrep_error_invalidforum);
     }
 
-    if (!is_member($rateData['groups'])) {
+    if (!is_member($rateData['allowedGroups'])) {
         $errorFunction($lang->ougc_customrep_error_nopermission);
     }
 
@@ -970,7 +970,7 @@ function postbit(array &$post): array
                 global $lang, $ignored_message, $ignore_bit, $post_visibility;
 
                 loadLanguage();
-                
+
                 $ignored_message = $lang->sprintf($lang->ougc_customrep_postbit_ignoredbit, $post['username']);
 
                 $post['customrep_ignorebit'] = eval($templates->render('postbit_ignored'));
@@ -1250,7 +1250,7 @@ function attachment_start(): bool
 
         if (
             !empty($rateData['requireattach']) &&
-            is_member($rateData['groups']) &&
+            is_member($rateData['allowedGroups']) &&
             is_member($rateData['forums'], ['usergroup' => $thread['fid'], 'additionalgroups' => '']) &&
             ($isFirstPost || !$firstPostOnly)
         ) {

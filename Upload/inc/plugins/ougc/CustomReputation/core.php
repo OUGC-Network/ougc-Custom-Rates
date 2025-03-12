@@ -186,7 +186,7 @@ function cacheUpdate(): bool
         'rid',
         'name',
         'image',
-        'groups',
+        'allowedGroups',
         'forums',
         'firstpost',
         'allowdeletion',
@@ -211,7 +211,7 @@ function cacheUpdate(): bool
         $cacheData[$rateID] = [
             'name' => $rateData['name'],
             'image' => $rateData['image'],
-            'groups' => $rateData['groups'],
+            'allowedGroups' => $rateData['allowedGroups'],
             'forums' => $rateData['forums'],
             'firstpost' => (int)$rateData['firstpost'],
             'allowdeletion' => (int)$rateData['allowdeletion'],
@@ -279,7 +279,7 @@ function rateInsert(array $rateData = [], bool $isUpdate = false, int $rateID = 
         [
             'name',
             'image',
-            'groups',
+            'allowedGroups',
             'forums'
         ] as $columnFieldName
     ) {
@@ -929,7 +929,7 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
         $image = &$rateImage;
 
-        $isAllowedToVote = is_member($rateData['groups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
+        $isAllowedToVote = is_member($rateData['allowedGroups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
 
         $reputation = ['name' => $rateName, 'image' => $rateImage]; // to remove later
 

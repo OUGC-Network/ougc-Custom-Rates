@@ -63,7 +63,7 @@ const TABLES_DATA = [
             'size' => 255,
             'default' => ''
         ],
-        'groups' => [
+        'allowedGroups' => [
             'type' => 'TEXT',
             'null' => true
         ],
@@ -301,6 +301,16 @@ function pluginActivate(): bool
         $db->write_query('ALTER TABLE ' . TABLE_PREFIX . 'ougc_customrep_log DROP KEY piduid');
     }
 
+    if ($db->field_exists('groups', 'ougc_customrep') &&
+        !$db->field_exists('allowedGroups', 'ougc_customrep')) {
+        $db->rename_column(
+            'ougc_customrep',
+            'groups',
+            'allowedGroups',
+            dbBuildFieldDefinition(TABLES_DATA['ougc_customrep']['allowedGroups'])
+        );
+    }
+
     /*~*~* RUN UPDATES END *~*~*/
 
     cacheUpdate();
@@ -337,7 +347,7 @@ function pluginInstall(): bool
         rateInsert([
             'name' => 'Like',
             'image' => '{bburl}/images/ougc_customrep/default.png',
-            'groups' => -1,
+            'allowedGroups' => -1,
             'forums' => -1,
             'disporder' => 1,
         ]);
