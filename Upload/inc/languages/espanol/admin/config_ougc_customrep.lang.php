@@ -117,5 +117,9 @@ $l['setting_ougc_customrep_enableajax'] = 'Habilitar Características Ajax';
 $l['setting_ougc_customrep_enableajax_desc'] = 'Habilitar las características que requieren Ajax. Tenga en cuenta que debe permitirlo en la opción "¿Activar funciones de XMLHttp request?", la cual se encuentra en los ajustes de "Servidor y opciones optimización". De lo contrario, esta función no servirá de nada';
 $l['setting_ougc_customrep_guests_popup'] = 'Permitir a los visitantes ver los Popup';
 $l['setting_ougc_customrep_guests_popup_desc'] = 'Habilita esta opción si deseas que los visitantes puedan ver las reacciones recibidas a un mensaje.';
+$l['setting_ougc_customrep_multiple'] = 'Multiple Rating Global Switch';
+$l['setting_ougc_customrep_multiple_desc'] = 'Enable this setting to allow users to rate post multiple times (using different ratings).';
+$l['setting_ougc_customrep_enableDvzStream'] = 'Enable DVZ Stream Integration';
+$l['setting_ougc_customrep_enableDvzStream_desc'] = 'Enable DVZ Stream integration for custom rates.';
 
 $l['setting_ougc_xthreads_information'] = '<span style="color: gray;">Para habilitar esta característica es necesario que tengas instalado <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> y crear algunos campos tal y como se muestra en la documentación.</span> <a href="https://mybb-es.com/hilo-1-8-ougc-custom-reputation-xthreads-pide-a-usuarios-reaccionar-para-mostrar-contenido">Ver guía.</a>';

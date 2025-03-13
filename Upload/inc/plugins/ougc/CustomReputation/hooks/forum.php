@@ -36,7 +36,9 @@ use ougc\CustomRates\Core\MyAlertsFormatter;
 use postParser;
 
 use function ougc\CustomRates\Core\alertsIsInstalled;
+use function ougc\CustomRates\Core\cacheGet;
 use function ougc\CustomRates\Core\forumGetRates;
+use function ougc\CustomRates\Core\getSetting;
 use function ougc\CustomRates\Core\getTemplate;
 use function ougc\CustomRates\Core\isAllowedForum;
 use function ougc\CustomRates\Core\loadLanguage;
@@ -54,11 +56,11 @@ use function ougc\CustomRates\Core\rateGetName;
 use function ougc\CustomRates\Core\urlHandlerBuild;
 use function ougc\CustomRates\Core\urlHandlerSet;
 
+use const ougc\CustomRates\ROOT;
 use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_POSITIVE;
 use const ougc\CustomRates\Core\POST_VISIBLE_STATUS_DRAFT;
-use const ougc\CustomRates\ROOT;
 
 function global_start(): bool
 {
@@ -108,6 +110,28 @@ function global_start(): bool
     return true;
 }
 
+function global_intermediate(): bool
+{
+    global $mybb;
+
+    if (getSetting('enableDvzStream') && isset($mybb->settings['dvz_stream_active_streams'])) {
+        $mybb->settings['dvz_stream_active_streams'] .= ',ougcCustomRates';
+    }
+
+    return true;
+}
+
+function xmlhttp09(): bool
+{
+    global $mybb;
+
+    if (getSetting('enableDvzStream') && isset($mybb->settings['dvz_stream_active_streams'])) {
+        $mybb->settings['dvz_stream_active_streams'] .= ',ougcCustomRates';
+    }
+
+    return true;
+}
+
 function reputation_do_add_process(): bool
 {
     global $existing_reputation;
@@ -141,14 +165,14 @@ function reputation_do_add_process(): bool
 
     $threadData = get_thread($postData['tid']);
 
-    foreach ((array)$mybb->cache->read('ougc_customrep') as $rateID => $rateData) {
+    foreach (cacheGet() as $rateID => $rateData) {
         $hookArguments['rateData'] = &$rateData;
 
         $hookArguments = $plugins->run_hooks('ougc_custom_rates_reputation_add_process_start', $hookArguments);
 
         if (
             empty($rateData['createCoreReputationType']) ||
-            !is_member($rateData['groups']) ||
+            !is_member($rateData['allowedGroups']) ||
             !is_member($rateData['forums'], ['usergroup' => $postData['fid'], 'additionalgroups' => '']) ||
             (!empty($rateData['firstpost']) && $postID !== (int)$threadData['firstpost'])
         ) {
@@ -715,7 +739,7 @@ function showthread_start09()
         $errorFunction($lang->ougc_customrep_error_invalidforum);
     }
 
-    if (!is_member($rateData['groups'])) {
+    if (!is_member($rateData['allowedGroups'])) {
         $errorFunction($lang->ougc_customrep_error_nopermission);
     }
 
@@ -969,6 +993,8 @@ function postbit(array &$post): array
                 ) >= $ignorePointsThreshold) {
                 global $lang, $ignored_message, $ignore_bit, $post_visibility;
 
+                loadLanguage();
+
                 $ignored_message = $lang->sprintf($lang->ougc_customrep_postbit_ignoredbit, $post['username']);
 
                 $post['customrep_ignorebit'] = eval($templates->render('postbit_ignored'));
@@ -1016,17 +1042,15 @@ function member_profile_end(): bool
 
     if ($unviewableForumsIDs) {
         $whereClauses[] = "t.fid NOT IN ($unviewableForumsIDs)";
-        $whereClauses[] = "t.fid NOT IN ($unviewableForumsIDs)";
     }
 
     $inactiveForumsIDs = get_inactive_forums();
 
     if ($inactiveForumsIDs) {
         $whereClauses[] = "t.fid NOT IN ($inactiveForumsIDs)";
-        $whereClauses[] = "t.fid NOT IN ($inactiveForumsIDs)";
     }
 
-    $ratesCache = (array)$mybb->cache->read('ougc_customrep');
+    $ratesCache = cacheGet();
 
     $ratesIDs = implode("','", array_keys($ratesCache));
 
@@ -1233,7 +1257,7 @@ function attachment_start(): bool
         return true;
     }
 
-    $ratesCache = (array)$cache->read('ougc_customrep');
+    $ratesCache = cacheGet();
 
     $isFirstPost = (int)$thread['firstpost'] === $postID;
 
@@ -1244,11 +1268,13 @@ function attachment_start(): bool
     $requiredRatesIDs = [];
 
     foreach ($ratesCache as $rateID => $rateData) {
+        $firstPostOnly = !empty($mybb->settings['ougc_customrep_firstpost']) || !empty($rateData['firstpost']);
+
         if (
             !empty($rateData['requireattach']) &&
-            is_member($rateData['groups']) &&
+            is_member($rateData['allowedGroups']) &&
             is_member($rateData['forums'], ['usergroup' => $thread['fid'], 'additionalgroups' => '']) &&
-            (!$isFirstPost || !empty($rateData['firstpost']))
+            ($isFirstPost || !$firstPostOnly)
         ) {
             $requiredRatesIDs[(int)$rateID] = 1;
         }

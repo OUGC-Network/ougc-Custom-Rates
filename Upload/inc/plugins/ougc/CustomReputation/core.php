@@ -186,7 +186,7 @@ function cacheUpdate(): bool
         'rid',
         'name',
         'image',
-        'groups',
+        'allowedGroups',
         'forums',
         'firstpost',
         'allowdeletion',
@@ -211,7 +211,7 @@ function cacheUpdate(): bool
         $cacheData[$rateID] = [
             'name' => $rateData['name'],
             'image' => $rateData['image'],
-            'groups' => $rateData['groups'],
+            'allowedGroups' => $rateData['allowedGroups'],
             'forums' => $rateData['forums'],
             'firstpost' => (int)$rateData['firstpost'],
             'allowdeletion' => (int)$rateData['allowdeletion'],
@@ -231,6 +231,13 @@ function cacheUpdate(): bool
     $cache->update('ougc_customrep', $cacheData);
 
     return true;
+}
+
+function cacheGet(): array
+{
+    global $cache;
+
+    return (array)$cache->read('ougc_customrep');
 }
 
 function reputationSync(int $userID): bool
@@ -255,7 +262,7 @@ function rateGet(int $rateID = 0): array
     if (!isset($customReputationCacheRates[$rateID])) {
         global $db;
 
-        $customReputationCacheRates = [];
+        $customReputationCacheRates[$rateID] = [];
 
         $query = $db->simple_select('ougc_customrep', '*', "rid='{$rateID}'");
 
@@ -279,7 +286,7 @@ function rateInsert(array $rateData = [], bool $isUpdate = false, int $rateID = 
         [
             'name',
             'image',
-            'groups',
+            'allowedGroups',
             'forums'
         ] as $columnFieldName
     ) {
@@ -393,9 +400,7 @@ function rateGetImage(string $rateImage, int $rateID): string
             '{imgdir}' => $theme['imgdir'] ?? ''
         ];
 
-        $customReputationCacheImages[$rateID] = $mybb->get_asset_url(
-            str_replace(array_keys($replaces), array_values($replaces), $rateImage)
-        );
+        $customReputationCacheImages[$rateID] = str_replace(array_keys($replaces), array_values($replaces), $rateImage);
     }
 
     return $customReputationCacheImages[$rateID];
@@ -737,7 +742,7 @@ function isAllowedForum(int $forumID): bool
     if (!isset($forumsCache[$forumID])) {
         global $cache;
 
-        $ratesCache = (array)$cache->read('ougc_customrep');
+        $ratesCache = cacheGet();
 
         foreach ($ratesCache as $rateID => &$rateData) {
             if (!is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {
@@ -760,7 +765,7 @@ function forumGetRates(int $forumID): array
 
         $forumsCache[$forumID] = [];
 
-        $ratesCache = (array)$cache->read('ougc_customrep');
+        $ratesCache = cacheGet();
 
         foreach ($ratesCache as $rateID => $rateData) {
             if (is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {
@@ -931,7 +936,7 @@ function postRatesParse(array &$postThreadObject, int $postID, int $setRateID = 
 
         $image = &$rateImage;
 
-        $isAllowedToVote = is_member($rateData['groups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
+        $isAllowedToVote = is_member($rateData['allowedGroups']) && (int)$postData['uid'] !== (int)$mybb->user['uid'];
 
         $reputation = ['name' => $rateName, 'image' => $rateImage]; // to remove later
 

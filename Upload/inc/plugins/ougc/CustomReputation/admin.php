@@ -63,7 +63,7 @@ const TABLES_DATA = [
             'size' => 255,
             'default' => ''
         ],
-        'groups' => [
+        'allowedGroups' => [
             'type' => 'TEXT',
             'null' => true
         ],
@@ -188,8 +188,8 @@ function pluginInfo(): array
         'website' => 'https://ougc.network',
         'author' => 'Omar G.',
         'authorsite' => 'https://ougc.network',
-        'version' => '1.8.30',
-        'versioncode' => 1830,
+        'version' => '1.8.31',
+        'versioncode' => 1831,
         'compatibility' => '18*',
         'codename' => 'ougc_customrep',
         'myalerts' => getSetting('myAlertsVersion'),
@@ -301,6 +301,16 @@ function pluginActivate(): bool
         $db->write_query('ALTER TABLE ' . TABLE_PREFIX . 'ougc_customrep_log DROP KEY piduid');
     }
 
+    if ($db->field_exists('groups', 'ougc_customrep') &&
+        !$db->field_exists('allowedGroups', 'ougc_customrep')) {
+        $db->rename_column(
+            'ougc_customrep',
+            'groups',
+            'allowedGroups',
+            dbBuildFieldDefinition(TABLES_DATA['ougc_customrep']['allowedGroups'])
+        );
+    }
+
     /*~*~* RUN UPDATES END *~*~*/
 
     cacheUpdate();
@@ -337,7 +347,7 @@ function pluginInstall(): bool
         rateInsert([
             'name' => 'Like',
             'image' => '{bburl}/images/ougc_customrep/default.png',
-            'groups' => -1,
+            'allowedGroups' => -1,
             'forums' => -1,
             'disporder' => 1,
         ]);
@@ -374,18 +384,16 @@ function pluginUninstall(): bool
     loadPluginLibrary();
 
     foreach (TABLES_DATA as $tableName => $tableColumns) {
-        foreach ($tableColumns as $fieldName => $fieldData) {
-            if ($db->field_exists($fieldName, $tableName)) {
-                $db->drop_column($tableName, $fieldName);
-            }
+        if ($db->table_exists($tableName)) {
+            $db->drop_table($tableName);
         }
     }
 
-    foreach (FIELDS_DATA as $table => $columns) {
-        if ($db->table_exists($table)) {
-            foreach ($columns as $field => $definition) {
-                if ($db->field_exists($field, $table)) {
-                    $db->drop_column($table, $field);
+    foreach (FIELDS_DATA as $tableName => $tableColumns) {
+        if ($db->table_exists($tableName)) {
+            foreach ($tableColumns as $fieldName => $fieldData) {
+                if ($db->field_exists($fieldName, $tableName)) {
+                    $db->drop_column($tableName, $fieldName);
                 }
             }
         }
@@ -424,22 +432,22 @@ function dbTables(): array
 {
     $tables_data = [];
 
-    foreach (TABLES_DATA as $table_name => $table_columns) {
-        foreach ($table_columns as $fieldName => $fieldData) {
+    foreach (TABLES_DATA as $tableName => $tableColumns) {
+        foreach ($tableColumns as $fieldName => $fieldData) {
             if (!isset($fieldData['type'])) {
                 continue;
             }
 
-            $tables_data[$table_name][$fieldName] = dbBuildFieldDefinition($fieldData);
+            $tables_data[$tableName][$fieldName] = dbBuildFieldDefinition($fieldData);
         }
 
-        foreach ($table_columns as $fieldName => $fieldData) {
+        foreach ($tableColumns as $fieldName => $fieldData) {
             if (isset($fieldData['primary_key'])) {
-                $tables_data[$table_name]['primary_key'] = $fieldName;
+                $tables_data[$tableName]['primary_key'] = $fieldName;
             }
 
             if ($fieldName === 'unique_key') {
-                $tables_data[$table_name]['unique_key'] = $fieldData;
+                $tables_data[$tableName]['unique_key'] = $fieldData;
             }
         }
     }
@@ -453,23 +461,23 @@ function dbVerifyTables(): bool
 
     $collation = $db->build_create_table_collation();
 
-    foreach (dbTables() as $table_name => $table_columns) {
-        if ($db->table_exists($table_name)) {
-            foreach ($table_columns as $fieldName => $fieldData) {
+    foreach (dbTables() as $tableName => $tableColumns) {
+        if ($db->table_exists($tableName)) {
+            foreach ($tableColumns as $fieldName => $fieldData) {
                 if ($fieldName == 'primary_key' || $fieldName == 'unique_key') {
                     continue;
                 }
 
-                if ($db->field_exists($fieldName, $table_name)) {
-                    $db->modify_column($table_name, "`{$fieldName}`", $fieldData);
+                if ($db->field_exists($fieldName, $tableName)) {
+                    $db->modify_column($tableName, "`{$fieldName}`", $fieldData);
                 } else {
-                    $db->add_column($table_name, $fieldName, $fieldData);
+                    $db->add_column($tableName, $fieldName, $fieldData);
                 }
             }
         } else {
-            $query_string = "CREATE TABLE IF NOT EXISTS `{$db->table_prefix}{$table_name}` (";
+            $query_string = "CREATE TABLE IF NOT EXISTS `{$db->table_prefix}{$tableName}` (";
 
-            foreach ($table_columns as $fieldName => $fieldData) {
+            foreach ($tableColumns as $fieldName => $fieldData) {
                 if ($fieldName == 'primary_key') {
                     $query_string .= "PRIMARY KEY (`{$fieldData}`)";
                 } elseif ($fieldName != 'unique_key') {
@@ -492,19 +500,19 @@ function dbVerifyIndexes(): bool
 {
     global $db;
 
-    foreach (dbTables() as $table_name => $table_columns) {
-        if (!$db->table_exists($table_name)) {
+    foreach (dbTables() as $tableName => $tableColumns) {
+        if (!$db->table_exists($tableName)) {
             continue;
         }
 
-        if (isset($table_columns['unique_key'])) {
-            foreach ($table_columns['unique_key'] as $key_name => $key_value) {
-                if ($db->index_exists($table_name, $key_name)) {
+        if (isset($tableColumns['unique_key'])) {
+            foreach ($tableColumns['unique_key'] as $key_name => $key_value) {
+                if ($db->index_exists($tableName, $key_name)) {
                     continue;
                 }
 
                 $db->write_query(
-                    "ALTER TABLE {$db->table_prefix}{$table_name} ADD UNIQUE KEY {$key_name} ({$key_value})"
+                    "ALTER TABLE {$db->table_prefix}{$tableName} ADD UNIQUE KEY {$key_name} ({$key_value})"
                 );
             }
         }
@@ -518,6 +526,10 @@ function dbVerifyColumns(): bool
     global $db;
 
     foreach (FIELDS_DATA as $tableName => $tableColumns) {
+        if (!$db->table_exists($tableName)) {
+            continue;
+        }
+
         foreach ($tableColumns as $fieldName => $fieldData) {
             if (!isset($fieldData['type'])) {
                 continue;
