@@ -56,11 +56,11 @@ use function ougc\CustomRates\Core\rateGetName;
 use function ougc\CustomRates\Core\urlHandlerBuild;
 use function ougc\CustomRates\Core\urlHandlerSet;
 
+use const ougc\CustomRates\ROOT;
 use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEGATIVE;
 use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_NEUTRAL;
 use const ougc\CustomRates\Core\CORE_REPUTATION_TYPE_POSITIVE;
 use const ougc\CustomRates\Core\POST_VISIBLE_STATUS_DRAFT;
-use const ougc\CustomRates\ROOT;
 
 function global_start(): bool
 {
