@@ -80,5 +80,10 @@ $l['myalerts_setting_ougc_customrep'] = 'Deseas recibir una alerta cuando alguie
 $l['ougc_customrep_myalerts_alert'] = '{1} ha reaccionado a tu mensaje con un "{2}".';
 $l['ougc_customrep_myalerts_alert_simple'] = '{1} ha reaccionado a tu mensaje.';
 
+$l['ougcCustomRatesDvzStream'] = 'Rates';
+$l['ougcCustomRatesDvzStreamEvent'] = 'Rated Content';
+$l['ougcCustomRatesDvzStreamTextThread'] = 'Rated thread "{1}".';
+$l['ougcCustomRatesDvzStreamTextPost'] = 'Rated post "{1}".';
+
 // Multi-lang support for individual rate types
 #$l['ougc_customrep_name_RID'] = 'Name';

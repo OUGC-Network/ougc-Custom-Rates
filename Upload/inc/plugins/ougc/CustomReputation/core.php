@@ -233,6 +233,13 @@ function cacheUpdate(): bool
     return true;
 }
 
+function cacheGet(): array
+{
+    global $cache;
+
+    return (array)$cache->read('ougc_customrep');
+}
+
 function reputationSync(int $userID): bool
 {
     global $db;
@@ -735,7 +742,7 @@ function isAllowedForum(int $forumID): bool
     if (!isset($forumsCache[$forumID])) {
         global $cache;
 
-        $ratesCache = (array)$cache->read('ougc_customrep');
+        $ratesCache = cacheGet();
 
         foreach ($ratesCache as $rateID => &$rateData) {
             if (!is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {
@@ -758,7 +765,7 @@ function forumGetRates(int $forumID): array
 
         $forumsCache[$forumID] = [];
 
-        $ratesCache = (array)$cache->read('ougc_customrep');
+        $ratesCache = cacheGet();
 
         foreach ($ratesCache as $rateID => $rateData) {
             if (is_member($rateData['forums'], ['usergroup' => $forumID, 'additionalgroups' => ''])) {

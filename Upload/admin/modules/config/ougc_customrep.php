@@ -150,7 +150,7 @@ if ($mybb->get_input('action') == 'add' || $mybb->get_input('action') == 'edit')
         if (!isset($mybb->input[$key]) && isset($rateData[$key])) {
             $mybb->input[$key] = $rateData[$key];
         } else {
-            $mybb->input[$key] = implode(',', $mybb->get_input($key, \MyBB::INPUT_ARRAY));
+            $mybb->input[$key] = implode(',', $mybb->get_input($key, MyBB::INPUT_ARRAY));
         }
     }
 

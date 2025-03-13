@@ -36,7 +36,9 @@ use ougc\CustomRates\Core\MyAlertsFormatter;
 use postParser;
 
 use function ougc\CustomRates\Core\alertsIsInstalled;
+use function ougc\CustomRates\Core\cacheGet;
 use function ougc\CustomRates\Core\forumGetRates;
+use function ougc\CustomRates\Core\getSetting;
 use function ougc\CustomRates\Core\getTemplate;
 use function ougc\CustomRates\Core\isAllowedForum;
 use function ougc\CustomRates\Core\loadLanguage;
@@ -108,6 +110,28 @@ function global_start(): bool
     return true;
 }
 
+function global_intermediate(): bool
+{
+    global $mybb;
+
+    if (getSetting('enableDvzStream') && isset($mybb->settings['dvz_stream_active_streams'])) {
+        $mybb->settings['dvz_stream_active_streams'] .= ',ougcCustomRates';
+    }
+
+    return true;
+}
+
+function xmlhttp09(): bool
+{
+    global $mybb;
+
+    if (getSetting('enableDvzStream') && isset($mybb->settings['dvz_stream_active_streams'])) {
+        $mybb->settings['dvz_stream_active_streams'] .= ',ougcCustomRates';
+    }
+
+    return true;
+}
+
 function reputation_do_add_process(): bool
 {
     global $existing_reputation;
@@ -141,7 +165,7 @@ function reputation_do_add_process(): bool
 
     $threadData = get_thread($postData['tid']);
 
-    foreach ((array)$mybb->cache->read('ougc_customrep') as $rateID => $rateData) {
+    foreach (cacheGet() as $rateID => $rateData) {
         $hookArguments['rateData'] = &$rateData;
 
         $hookArguments = $plugins->run_hooks('ougc_custom_rates_reputation_add_process_start', $hookArguments);
@@ -1018,17 +1042,15 @@ function member_profile_end(): bool
 
     if ($unviewableForumsIDs) {
         $whereClauses[] = "t.fid NOT IN ($unviewableForumsIDs)";
-        $whereClauses[] = "t.fid NOT IN ($unviewableForumsIDs)";
     }
 
     $inactiveForumsIDs = get_inactive_forums();
 
     if ($inactiveForumsIDs) {
         $whereClauses[] = "t.fid NOT IN ($inactiveForumsIDs)";
-        $whereClauses[] = "t.fid NOT IN ($inactiveForumsIDs)";
     }
 
-    $ratesCache = (array)$mybb->cache->read('ougc_customrep');
+    $ratesCache = cacheGet();
 
     $ratesIDs = implode("','", array_keys($ratesCache));
 
@@ -1235,7 +1257,7 @@ function attachment_start(): bool
         return true;
     }
 
-    $ratesCache = (array)$cache->read('ougc_customrep');
+    $ratesCache = cacheGet();
 
     $isFirstPost = (int)$thread['firstpost'] === $postID;
 

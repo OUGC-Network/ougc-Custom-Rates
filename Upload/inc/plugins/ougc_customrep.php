@@ -35,6 +35,7 @@ use function ougc\CustomRates\Admin\pluginInstall;
 use function ougc\CustomRates\Admin\pluginIsInstalled;
 use function ougc\CustomRates\Admin\pluginUninstall;
 use function ougc\CustomRates\Core\addHooks;
+use function ougc\CustomRates\Core\cacheGet;
 use function ougc\CustomRates\Core\cacheUpdate;
 use function ougc\CustomRates\Core\getTemplate;
 use function ougc\CustomRates\Core\loadLanguage;
@@ -121,7 +122,7 @@ function ougc_customrep_xthreads_hide(
     static $ratesCache = null;
 
     if ($ratesCache === null) {
-        $ratesCache = (array)$cache->read('ougc_customrep');
+        $ratesCache = cacheGet();
 
         if ($forumID) {
             foreach ($ratesCache as $rateID => $rateData) {

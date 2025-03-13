@@ -129,6 +129,8 @@ $l['setting_ougc_customrep_guests_popup'] = 'Allow Guests to View Popup';
 $l['setting_ougc_customrep_guests_popup_desc'] = 'Enable this setting if you want to allow guests viewing rate detail modals.';
 $l['setting_ougc_customrep_multiple'] = 'Multiple Rating Global Switch';
 $l['setting_ougc_customrep_multiple_desc'] = 'Enable this setting to allow users to rate post multiple times (using different ratings).';
+$l['setting_ougc_customrep_enableDvzStream'] = 'Enable DVZ Stream Integration';
+$l['setting_ougc_customrep_enableDvzStream_desc'] = 'Enable DVZ Stream integration for custom rates.';
 
 $l['setting_ougc_customrep_xthreads_information'] = '<span style="color: gray;">To be able to use this feature you need to install <a href="http://mybbhacks.zingaburga.com/showthread.php?tid=288">xThreads</a> and create some fields according to the documentation.</span>';
 

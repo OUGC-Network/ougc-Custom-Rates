@@ -46,14 +46,16 @@ class MyAlertsFormatter extends MybbStuff_MyAlerts_Formatter_AbstractFormatter
     {
         global $cache;
 
-        $ratesCache = (array)$cache->read('ougc_customrep');
+        $ratesCache = cacheGet();
 
         $alertContent = $alert->getExtraDetails();
 
         $rateID = (int)$alertContent['rid'];
 
         if (empty($rateID)) {
-            $logData = logGet($alert->getObjectId());
+            $logID = (int)$alert->getObjectId();
+
+            $logData = logGet($logID);
 
             if (!empty($logData['rid'])) {
                 $rateID = (int)$logData['rid'];
