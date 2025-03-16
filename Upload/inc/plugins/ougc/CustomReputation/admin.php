@@ -156,7 +156,7 @@ const TABLES_DATA = [
         ],
         'unique_key' => [
             'piduidrid' => 'pid,uid,rid',
-            'pidrid' => 'pid,rid'
+            //'pidrid' => 'pid,rid'
         ]
     ]
 ];
