@@ -30,6 +30,8 @@ use dvzStream\Stream;
 use dvzStream\StreamEvent;
 
 use function dvzStream\addStream;
+use function dvzStream\getCsvSettingValues;
+use function dvzStream\getInaccessibleForumIds;
 use function ougc\CustomRates\Core\cacheGet;
 use function ougc\CustomRates\Core\getTemplate;
 use function ougc\CustomRates\Core\loadLanguage;
@@ -53,16 +55,17 @@ $stream->setFetchHandler(function (int $query_limit, int $last_log_id = 0) use (
 
     $whereClauses = ["l.lid>'{$last_log_id}'", "t.visible='1'", "t.closed NOT LIKE 'moved|%'", "p.visible='1'"];
 
-    $unviewableForumsIDs = get_unviewable_forums(true);
+    $hiddenForums = array_merge(
+        getInaccessibleForumIds(),
+        getCsvSettingValues('hidden_forums')
+    );
 
-    if ($unviewableForumsIDs) {
-        $whereClauses[] = "t.fid NOT IN ($unviewableForumsIDs)";
+    if (in_array(-1, $hiddenForums)) {
+        return [];
     }
 
-    $inactiveForumsIDs = get_inactive_forums();
-
-    if ($inactiveForumsIDs) {
-        $whereClauses[] = "t.fid NOT IN ($inactiveForumsIDs)";
+    if ($hiddenForums) {
+        $whereClauses[] = 't.fid NOT IN (' . implode(',', $hiddenForums) . ')';
     }
 
     $ratesCache = cacheGet();
@@ -73,7 +76,7 @@ $stream->setFetchHandler(function (int $query_limit, int $last_log_id = 0) use (
 
     $query = $db->simple_select(
         "ougc_customrep_log l LEFT JOIN {$db->table_prefix}posts p ON (p.pid=l.pid) LEFT JOIN {$db->table_prefix}threads t ON (t.tid=p.tid)",
-        'l.lid AS logID, l.pid AS postID, l.uid AS userID, l.rid AS rateID, l.dateline AS logStamp, p.subject AS postSubject, t.tid AS threadID, t.firstpost AS firstPost, t.subject AS threadSubject, t.fid AS forumID, t.prefix AS threadPrefix',
+        'l.lid AS logID, l.pid AS postID, l.uid AS userID, l.rid AS rateID, l.dateline AS logStamp, p.subject AS postSubject, t.tid AS threadID, t.firstpost AS firstPostID, t.subject AS threadSubject, t.fid AS forumID, t.prefix AS threadPrefix',
         implode(' AND ', $whereClauses),
         ['order_by' => 'l.dateline', 'order_dir' => 'desc', 'limit' => $query_limit]
     );
@@ -102,7 +105,7 @@ $stream->setFetchHandler(function (int $query_limit, int $last_log_id = 0) use (
 
     $prefixesCache = (array)$cache->read('threadprefixes');
 
-    $stream_events = [];
+    $streamEvents = [];
 
     foreach ($logsCache as $logID => $logData) {
         $rateID = (int)$logData['rateID'];
@@ -134,8 +137,8 @@ $stream->setFetchHandler(function (int $query_limit, int $last_log_id = 0) use (
             'rateName' => $ratesCache[$rateID]['name'],
             'rateImage' => $ratesCache[$rateID]['image'] ?? '',
             'firstPostOnly' => !empty($ratesCache[$rateID]['firstpost']),
-            'isFirstPost' => (int)$logData['postID'] === (int)$logData['firstPost'],
-            'firstPost' => (int)$logData['firstPost'],
+            'isFirstPost' => (int)$logData['postID'] === (int)$logData['firstPostID'],
+            'firstPostID' => (int)$logData['firstPostID'],
             'forumID' => (int)$logData['forumID'],
             'forumName' => $forumsCache[$logData['forumID']]['name'] ?? '',
             'threadID' => (int)$logData['threadID'],
@@ -145,10 +148,10 @@ $stream->setFetchHandler(function (int $query_limit, int $last_log_id = 0) use (
             'threadSubject' => $logData['threadSubject']
         ]);
 
-        $stream_events[] = $streamEvent;
+        $streamEvents[] = $streamEvent;
     }
 
-    return $stream_events;
+    return $streamEvents;
 });
 
 $stream->addProcessHandler(function (StreamEvent $streamEvent) {
@@ -189,9 +192,9 @@ $stream->addProcessHandler(function (StreamEvent $streamEvent) {
         );
 
         $postLink = get_post_link(
-                $streamData['firstPost'],
+                $streamData['firstPostID'],
                 $streamData['threadID']
-            ) . '#pid' . $streamData['firstPost'];
+            ) . '#pid' . $streamData['firstPostID'];
     } else {
         $streamText = $lang->sprintf(
             $lang->ougcCustomRatesDvzStreamTextPost,

@@ -152,7 +152,7 @@ To display Rates data it is required that you edit the following template for ea
    `search_results_threads_thread` templates to display the rates section in the forum display thread list.
 6. Place `{$announcement['customrep']}` after `{$senditem}` in the `portal_announcement` template to display the rates
    section in the portal announcements.
-7. Place `{$memprofile['customrep']}` after `{$modoptions}` in the `member_profile` template to display the rates stats
+7. Place `{$memprofile['customrep']}` after `{$signature}` in the `member_profile` template to display the rates stats
    in profiles.
 
 [Go up to Table of Contents](#table_of_contents)

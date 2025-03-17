@@ -48,7 +48,7 @@
     "value": 0
   },
   "enableDvzStream": {
-    "type": "yesno",
+    "optionscode": "yesno",
     "value": 1
   }
 }

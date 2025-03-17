@@ -42,8 +42,8 @@ use function ougc\CustomRates\Core\loadLanguage;
 use function ougc\CustomRates\Core\rateInsert;
 use function ougc\CustomRates\Core\urlHandlerBuild;
 
-use const ougc\CustomRates\ROOT;
 use const PLUGINLIBRARY;
+use const ougc\CustomRates\ROOT;
 
 const TABLES_DATA = [
     'ougc_customrep' => [
