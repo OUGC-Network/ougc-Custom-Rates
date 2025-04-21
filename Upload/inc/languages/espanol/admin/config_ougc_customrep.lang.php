@@ -55,6 +55,7 @@ $l['ougc_customrep_h_visible'] = 'Visible';
 $l['ougc_customrep_perm'] = 'Puede modificar las reacciones?';
 
 // Tabs
+$l['ougc_custom_rates_admin_menu'] = 'Custom Rates';
 $l['ougc_customrep_tab_view'] = 'Ver';
 $l['ougc_customrep_tab_view_d'] = 'Lista de las reacciones existentes.';
 $l['ougc_customrep_tab_add'] = 'Agregar';

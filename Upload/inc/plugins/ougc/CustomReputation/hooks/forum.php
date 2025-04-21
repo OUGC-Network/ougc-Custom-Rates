@@ -88,6 +88,8 @@ function global_start(): bool
             $templatelist .= 'ougccustomrep_headerinclude, ougccustomrep_headerinclude_fa, ougccustomrep_rep_number, ougccustomrep_rep_img, ougccustomrep_rep_img_fa, ougccustomrep_rep, ougccustomrep_rep_fa, ougccustomrep, ougccustomrep_rep_voted, ougccustomrep_xthreads_js, ougccustomrep_headerinclude_xthreads_editpost, ougccustomrep_headerinclude_xthreads';
         }
 
+        $templatelist .= ', ougccustomrep_rep_img, ougccustomrep_streamItem, ougccustomrep_streamLocation';
+
         if (THIS_SCRIPT === 'alerts.php') {
             loadLanguage();
         }
@@ -300,6 +302,9 @@ function forumdisplay_thread(): bool
 {
     global $mybb, $db;
     global $fid, $footer, $threadcache;
+    global $thread;
+
+    $thread['customrep'] = '';
 
     static $done = false;
 
@@ -370,7 +375,18 @@ function forumdisplay_thread(): bool
 
 function forumdisplay_thread_end(): bool
 {
+    global $mybb;
     global $thread;
+
+    $thread['customrep'] = '';
+
+    if (empty($mybb->settings['ougc_customrep_threadlist']) ||
+        !is_member(
+            $mybb->settings['ougc_customrep_threadlist'],
+            ['usergroup' => $thread['fid'], 'additionalgroups' => '']
+        )) {
+        return false;
+    }
 
     if (my_substr($thread['closed'], 0, 6) === 'moved|') {
         return false;
@@ -388,6 +404,8 @@ function portal_announcement(): bool
     global $mybb, $db;
     global $footer;
     global $tids, $annfidswhere, $tunviewwhere, $announcement;
+
+    $announcement['customrep'] = '';
 
     if (empty($mybb->settings['ougc_customrep_portal'])) {
         return false;
@@ -529,6 +547,8 @@ function reputation_start(): bool
 function showthread_start09()
 {
     global $mybb;
+
+    $post['customrep'] = '';
 
     if (!in_array($mybb->get_input('action'), ['customReputation', 'customReputationPopUp'])) {
         return;
@@ -891,6 +911,8 @@ function postbit(array &$post): array
 {
     global $mybb;
     global $fid, $templates, $thread;
+
+    $post['customrep'] = '';
 
     $postID = (int)$post['pid'];
 
