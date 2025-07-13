@@ -544,7 +544,7 @@ function reputation_start(): bool
     return true;
 }
 
-function showthread_start09()
+function showthread_start09(): void
 {
     global $mybb;
 

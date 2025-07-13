@@ -145,8 +145,8 @@ Follow the next steps in order to update your copy of this plugin.
 
 To display Rates data it is required that you edit the following template for each of your themes.
 
-1. Place `{$post['customrep']}` after `{$post['button_rep']}` in the `postbit` and `postbit_classic` templates to
-   display the rates section in posts.
+1. Place `{$post['customrep']}` after `{$post['button_rep']}` in the `postbit`, `postbit_classic`, and
+   `search_results_posts_post` templates to display the rates section in posts.
 2. Place `{$post['customrep_post_visibility']}` after `{$post_visibility}` in the `postbit` and `postbit_classic`
    templates for the _Hide Post On Count_ feature.
 3. Place `{$post['customrep_ignorebit']}` after `{$deleted_bit}` in the `postbit` and `postbit_classic` templates for

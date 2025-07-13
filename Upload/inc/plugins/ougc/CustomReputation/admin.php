@@ -260,7 +260,11 @@ function pluginActivate(): bool
     }
 
     if ($styleSheetContents = file_get_contents(ROOT . '/stylesheet.css')) {
-        $PL->stylesheet('ougc_customrep', $styleSheetContents, 'showthread.php|forumdisplay.php|portal.php|member.php');
+        $PL->stylesheet(
+            'ougc_customrep',
+            $styleSheetContents,
+            'showthread.php|forumdisplay.php|portal.php|member.php|search.php'
+        );
     }
 
     if (alertsIsInstalled()) {
