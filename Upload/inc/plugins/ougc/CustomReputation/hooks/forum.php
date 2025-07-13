@@ -907,12 +907,16 @@ function showthread_start09(): void
     ]);
 }
 
-function postbit(array &$post): array
+function postbit(array &$post, bool $isSearch = false, array $threadData = []): array
 {
     global $mybb;
-    global $fid, $templates, $thread;
+    global $fid, $templates;
 
-    $post['customrep'] = '';
+    if ($isSearch) {
+        $thread = $threadData;
+    } else {
+        global $thread;
+    }
 
     $postID = (int)$post['pid'];
 
@@ -970,7 +974,7 @@ function postbit(array &$post): array
 
         $footer .= eval(getTemplate('headerinclude'));
 
-        global $db, $thread;
+        global $db;
 
         $forumsRateCache = forumGetRates($forumID);
 
@@ -978,13 +982,17 @@ function postbit(array &$post): array
 
         $whereClauses = ["rid IN ('{$ratesIDs}')"];
 
-        if (!empty($mybb->settings['ougc_customrep_firstpost'])) {
+        if (!empty($mybb->settings['ougc_customrep_firstpost']) && !$isSearch) {
             $whereClauses[] = "pid='{$firstPostID}'";
         } // Bug: http://mybbhacks.zingaburga.com/showthread.php?tid=1587&pid=12762#pid12762
-        elseif ($mybb->get_input('mode') == 'threaded') {
+        elseif ($mybb->get_input('mode') == 'threaded' && !$isSearch) {
             $whereClauses[] = "pid='{$mybb->get_input('pid', 1)}'";
-        } elseif (isset($GLOBALS['pids'])) {
+        } elseif (isset($GLOBALS['pids']) && !$isSearch) {
             $whereClauses[] = $GLOBALS['pids'];
+        } elseif ($isSearch) {
+            global $search;
+
+            $whereClauses[] = "pid IN ({$db->escape_string($search['posts'])})";
         } else {
             $whereClauses[] = "pid='{$postID}'";
         }
@@ -992,7 +1000,7 @@ function postbit(array &$post): array
         $query = $db->simple_select(
             'ougc_customrep_log',
             'rid, pid, lid, uid',
-            (implode(' AND ', $whereClauses))
+            implode(' AND ', $whereClauses)
         );
 
         while ($logData = $db->fetch_array($query)) {
@@ -1323,6 +1331,35 @@ function attachment_start(): bool
     error($lang->ougc_customrep_error_nopermission_attachment);
 
     return false;
+}
+
+function search_results_thread(): void
+{
+    forumdisplay_thread_end();
+}
+
+function search_results_post(): void
+{
+    global $post;
+
+    static $threadsCache = null;
+
+    if ($threadsCache === null) {
+        global $db;
+        global $search;
+
+        $query = $db->simple_select(
+            "threads t LEFT JOIN {$db->table_prefix}posts p ON (t.tid=p.tid)",
+            't.tid, t.firstpost',
+            "p.pid IN ({$db->escape_string($search['posts'])})"
+        );
+
+        while ($threadData = $db->fetch_array($query)) {
+            $threadsCache[$threadData['tid']] = $threadData;
+        }
+    }
+
+    postbit($post, true, $threadsCache[$post['tid']]);
 }
 
 function class_moderation_delete_thread_start(int &$threadID): int
